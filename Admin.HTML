@@ -143,8 +143,7 @@ tr:hover td { background: #fafafa; }
     <div class="login-err" id="login-err"></div>
     <button class="btn btn-primary btn-block btn-lg" style="margin-top:8px" onclick="tryAdminLogin()">Giriş Yap</button>
     <div class="first-time-note" id="first-time-note" style="display:none">
-      ℹ️ İlk girişte kendinize özel bir admin şifresi oluşturabilirsiniz.<br>
-      Varsayılan: kullanıcı <strong>admin</strong> / şifre <strong>gulasya2024</strong>
+      ℹ️ Gül Asya Admin Paneli — Ayarlar &gt; Şifre bölümünden şifrenizi değiştirebilirsiniz.
     </div>
   </div>
 </div>
@@ -386,7 +385,7 @@ tr:hover td { background: #fafafa; }
 /* ══════════════════════════════════════════════
    ADMİN GİRİŞ SİSTEMİ
 ══════════════════════════════════════════════ */
-const DEFAULT_ADMIN = { user: 'admin', passHash: simpleHash('gulasya2024') };
+const DEFAULT_ADMIN = { user: 'admin', passHash: simpleHash('GulAsya@2026!') };
 
 function tryAdminLogin() {
   const user = document.getElementById('admin-user').value.trim();
