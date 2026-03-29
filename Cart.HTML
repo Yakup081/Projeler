@@ -450,6 +450,13 @@ function submitStep2() {
 }
 
 function placeOrder(paytype) {
+  // Rate limit — 1 saatte max 3 sipariş
+  const rl = RateLimit.check(RL.PLACE_ORDER.key, RL.PLACE_ORDER.max, RL.PLACE_ORDER.windowMs);
+  if (!rl.allowed) {
+    toast('🚫', 'Çok fazla sipariş denemesi. ' + rl.retryAfterMin + ' sonra tekrar deneyin.', 'e');
+    return;
+  }
+
   const total = Store.cartTotal();
   const delivery = total >= 300 ? 0 : 29.90;
   const grand = total + delivery;
