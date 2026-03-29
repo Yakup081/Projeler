@@ -121,6 +121,25 @@
 </div>
 <div id="toast-container"></div>
 
+<!-- Firebase Tarayıcı Kütüphaneleri -->
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+<!-- Senin Projenin Bağlantı Anahtarı -->
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyARQCxgiOc6NxO2djUi1dXYz3GTFeLRs2w",
+    authDomain: "gulasyamarket.firebaseapp.com",
+    projectId: "gulasyamarket",
+    storageBucket: "gulasyamarket.firebasestorage.app",
+    messagingSenderId: "842854515996",
+    appId: "1:842854515996:web:6e62d9bb94c04110f8e6d9"
+  };
+  // Firebase'i başlat
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
 <script src="products.js"></script>
 <script src="shared.js"></script>
 <script>
@@ -426,9 +445,9 @@ function placeOrder(paytype) {
     total: grand,
     status: 'Yeni',
   };
-  const orders = Store.getOrders();
-  orders.push(order);
-  Store.setOrders(orders);
+db.collection("orders").doc(code).set(order).then(() => {
+    console.log("Sipariş başarıyla buluta gönderildi!");
+  });
   Store.sendSMS(pendingAddr.phone, `Gül Asya Mini Market: #${code} numaralı siparişiniz alındı. Toplam: ${fmt(grand)}. Tahmini teslimat: ${getDeliveryTime()}. İyi günler! 🌹`);
   pendingPayment.orderCode = code;
   Store.clearCart();
