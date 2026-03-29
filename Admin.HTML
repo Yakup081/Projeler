@@ -385,7 +385,7 @@ tr:hover td { background: #fafafa; }
 /* ══════════════════════════════════════════════
    ADMİN GİRİŞ SİSTEMİ
 ══════════════════════════════════════════════ */
-const DEFAULT_ADMIN = { user: 'admin', passHash: simpleHash('yakup08') };
+const DEFAULT_ADMIN = { user: 'admin', passHash: simpleHash('GulAsya@2026!') };
 
 function tryAdminLogin() {
   const user = document.getElementById('admin-user').value.trim();
@@ -394,13 +394,31 @@ function tryAdminLogin() {
 
   if (!user || !pass) { err.textContent = 'Kullanıcı adı ve şifre zorunludur.'; return; }
 
+  // Rate limit — 5 yanlış denemede 15 dakika kilit
+  const rl = RateLimit.check(RL.ADMIN_LOGIN.key, RL.ADMIN_LOGIN.max, RL.ADMIN_LOGIN.windowMs);
+  if (!rl.allowed) {
+    err.textContent = '🔒 Çok fazla hatalı deneme! ' + rl.retryAfterMin + ' sonra tekrar deneyin.';
+    document.getElementById('admin-user').disabled = true;
+    document.getElementById('admin-pass').disabled = true;
+    // Kilit süresi bitince formu aç
+    setTimeout(() => {
+      document.getElementById('admin-user').disabled = false;
+      document.getElementById('admin-pass').disabled = false;
+      err.textContent = '';
+    }, rl.retryAfterMs);
+    return;
+  }
+
   const savedHash = Store.getAdminHash() || DEFAULT_ADMIN.passHash;
   const inputHash = simpleHash(pass);
 
   if (user !== 'admin' || inputHash !== savedHash) {
-    err.textContent = 'Kullanıcı adı veya şifre hatalı!';
+    const kalan = rl.remaining;
+    err.textContent = 'Kullanıcı adı veya şifre hatalı!' + (kalan > 0 ? ' (' + kalan + ' hakkınız kaldı)' : '');
     return;
   }
+
+  RateLimit.reset(RL.ADMIN_LOGIN.key);
   err.textContent = '';
   Store.setAdminSession();
   document.getElementById('login-screen').style.display = 'none';
@@ -419,8 +437,15 @@ function adminLogout() {
 
 /* İlk yükleme */
 document.addEventListener('DOMContentLoaded', () => {
-  // İpucu göster
   document.getElementById('first-time-note').style.display = 'block';
+
+  // Mevcut rate limit kilidi varsa formu kilitle
+  const blocked = RateLimit.isBlocked(RL.ADMIN_LOGIN.key);
+  if (blocked) {
+    document.getElementById('login-err').textContent = '🔒 Hesap kilitli. ' + blocked + ' sonra tekrar deneyin.';
+    document.getElementById('admin-user').disabled = true;
+    document.getElementById('admin-pass').disabled = true;
+  }
 
   // Aktif oturum var mı?
   if (Store.isAdminLoggedIn()) {
