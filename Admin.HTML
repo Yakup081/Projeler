@@ -188,7 +188,7 @@ tr:hover td { background: #fafafa; }
                 <option value="dondurulmus">Dondurulmuş</option>
                 <option value="ekmek">Ekmek</option>
               </select>
-              <button class="btn btn-primary btn-sm" onclick="openProductModal()">+ Yeni Ürün</button>
+              <button class="btn btn-primary btn-sm" onclick="openProductModal()">+ Yeni Ürün</button><button class="btn btn-danger btn-sm" onclick="uploadProductsToFirebase()">Ürünleri Firebase'e Aktar</button>
             </div>
           </div>
           <div class="table-search"><input type="text" id="prod-search" placeholder="Ürün adı veya marka ara…" oninput="renderProductsTable()"></div>
@@ -290,6 +290,23 @@ tr:hover td { background: #fafafa; }
 
 <!-- Senin Projenin Bağlantı Anahtarı -->
 <script>
+    function uploadProductsToFirebase() {
+  if(!confirm("Tüm ürünler Firebase'e aktarılacak. Emin misin?")) return;
+  
+  let basarili = 0;
+  PRODUCTS.forEach(p => {
+    // Ürünleri "products" adında bir koleksiyona kaydediyoruz
+    db.collection("products").doc(p.id.toString()).set(p)
+      .then(() => {
+        basarili++;
+        console.log(p.name + " eklendi.");
+        if(basarili === PRODUCTS.length) {
+          toast('✅', 'Tüm ürünler başarıyla Firebase e aktarıldı!', 's');
+        }
+      })
+      .catch(e => console.error("Hata:", e));
+  });
+}
   const firebaseConfig = {
     apiKey: "AIzaSyARQCxgiOc6NxO2djUi1dXYz3GTFeLRs2w",
     authDomain: "gulasyamarket.firebaseapp.com",
