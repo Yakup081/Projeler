@@ -58,7 +58,6 @@ function renderHeader() {
         <a href="index.html#kampanya">Kampanyalar</a>
         <a href="index.html#hakkimizda">Hakkımızda</a>
         ${u ? `<button onclick="doLogout()">Çıkış (${u.name})</button>` : ''}
-        <button onclick="goAdmin()">⚙️ Admin</button>
       </div>`;
   }
   if (header) {
