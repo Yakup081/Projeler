@@ -284,6 +284,25 @@ tr:hover td { background: #fafafa; }
 
 <div id="toast-container"></div>
 
+<!-- Firebase Tarayıcı Kütüphaneleri -->
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+<!-- Senin Projenin Bağlantı Anahtarı -->
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyARQCxgiOc6NxO2djUi1dXYz3GTFeLRs2w",
+    authDomain: "gulasyamarket.firebaseapp.com",
+    projectId: "gulasyamarket",
+    storageBucket: "gulasyamarket.firebasestorage.app",
+    messagingSenderId: "842854515996",
+    appId: "1:842854515996:web:6e62d9bb94c04110f8e6d9"
+  };
+  // Firebase'i başlat
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
 <script src="products.js"></script>
 <script src="shared.js"></script>
 <script>
@@ -291,6 +310,18 @@ let currentAdminTab = 'dashboard';
 let editingProdId = null;
 
 // ── INIT ──────────────────────────────────────────────────────
+
+// Veritabanını canlı olarak dinle
+  db.collection("orders").onSnapshot((snapshot) => {
+    let ordersList = [];
+    snapshot.forEach((doc) => {
+      ordersList.push(doc.data());
+    });
+    // Gelen güncel siparişleri yerel belleğe yaz ve admin ekranını yenile
+    Store.setOrders(ordersList);
+    refreshAll(); 
+  });
+
 document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 1000);
@@ -430,6 +461,8 @@ function changeStatus(id, st) {
   const old = o.status;
   o.status = st;
   Store.setOrders(orders);
+  // Firebase'deki siparişin durumunu güncelle
+  db.collection("orders").doc(id).update({ status: st });
   const msgs = {
     Hazırlanıyor: `#${id} siparişiniz hazırlanıyor. Kısa süre içinde yola çıkacak! 🌹`,
     Yolda: `#${id} siparişiniz yola çıktı! Tahmini süre 30-60 dk. 🚚`,
