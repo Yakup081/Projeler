@@ -3,6 +3,60 @@
    shared.js  —  tüm sayfalar bu dosyayı kullanır
    ========================================================= */
 
+
+/* =========================================================
+   RATE LİMİTER — tüm kritik işlemler için
+   ========================================================= */
+const RateLimit = {
+  _data(key) {
+    try { return JSON.parse(localStorage.getItem('ga_rl_' + key) || '{"attempts":[],"blocked":0}'); }
+    catch { return { attempts: [], blocked: 0 }; }
+  },
+  _save(key, d) { localStorage.setItem('ga_rl_' + key, JSON.stringify(d)); },
+
+  check(key, maxAttempts, windowMs) {
+    const now = Date.now();
+    const d = this._data(key);
+    if (d.blocked && now < d.blocked) {
+      const ms = d.blocked - now;
+      return { allowed: false, remaining: 0, retryAfterMs: ms, retryAfterMin: this._minStr(ms) };
+    }
+    if (d.blocked && now >= d.blocked) { d.blocked = 0; d.attempts = []; }
+    d.attempts = d.attempts.filter(t => now - t < windowMs);
+    if (d.attempts.length >= maxAttempts) {
+      d.blocked = now + windowMs;
+      this._save(key, d);
+      return { allowed: false, remaining: 0, retryAfterMs: windowMs, retryAfterMin: this._minStr(windowMs) };
+    }
+    d.attempts.push(now);
+    this._save(key, d);
+    return { allowed: true, remaining: maxAttempts - d.attempts.length, retryAfterMs: 0, retryAfterMin: '' };
+  },
+
+  reset(key) { localStorage.removeItem('ga_rl_' + key); },
+
+  isBlocked(key) {
+    const d = this._data(key);
+    if (!d.blocked) return null;
+    const ms = d.blocked - Date.now();
+    return ms > 0 ? this._minStr(ms) : null;
+  },
+
+  _minStr(ms) {
+    const s = Math.ceil(ms / 1000);
+    if (s < 60) return s + ' saniye';
+    return Math.ceil(s / 60) + ' dakika';
+  },
+};
+
+const RL = {
+  ADMIN_LOGIN:   { key: 'admin_login', max: 5,  windowMs: 15 * 60 * 1000 },
+  USER_LOGIN:    { key: 'user_login',  max: 5,  windowMs: 10 * 60 * 1000 },
+  USER_REGISTER: { key: 'user_reg',   max: 3,  windowMs: 60 * 60 * 1000 },
+  ADD_TO_CART:   { key: 'cart_add',   max: 20, windowMs: 60 * 1000       },
+  PLACE_ORDER:   { key: 'place_order',max: 3,  windowMs: 60 * 60 * 1000 },
+};
+
 /* ── TOAST ─────────────────────────────────────────────── */
 function toast(icon, msg, type = 's') {
   let container = document.getElementById('toast-container');
@@ -187,6 +241,13 @@ function doRegister() {
 
   if (!email || !pass || !name) { err.textContent = 'Lütfen tüm alanları doldurun.'; return; }
 
+  // Rate limit kontrolü
+  const rl = RateLimit.check(RL.USER_REGISTER.key, RL.USER_REGISTER.max, RL.USER_REGISTER.windowMs);
+  if (!rl.allowed) {
+    err.textContent = '\u26a0\ufe0f Çok fazla kayıt denemesi. ' + rl.retryAfterMin + ' sonra tekrar deneyin.';
+    return;
+  }
+
   // Firebase'e yeni kullanıcı kaydet
   firebase.auth().createUserWithEmailAndPassword(email, pass)
     .then((userCredential) => {
@@ -197,6 +258,7 @@ function doRegister() {
         role: "customer",
         createdAt: new Date().toLocaleString('tr-TR')
       });
+      RateLimit.reset(RL.USER_REGISTER.key);
       toast('🎉', 'Kayıt başarılı! Hoş geldiniz.', 's');
       closeModal('auth-modal');
     })
@@ -213,6 +275,13 @@ function doLogin() {
 
   if (!email || !pass) { err.textContent = 'Lütfen e-posta ve şifrenizi girin.'; return; }
 
+  // Rate limit kontrolü
+  const rl = RateLimit.check(RL.USER_LOGIN.key, RL.USER_LOGIN.max, RL.USER_LOGIN.windowMs);
+  if (!rl.allowed) {
+    err.textContent = '\u26a0\ufe0f Çok fazla hatalı deneme. ' + rl.retryAfterMin + ' sonra tekrar deneyin.';
+    return;
+  }
+
   // Admin girişi — admin.html sayfasına yönlendir
   if (email === 'admin@gulasya.com') {
     window.location.href = 'admin.html'; return;
@@ -221,11 +290,12 @@ function doLogin() {
   // Firebase ile giriş yap
   firebase.auth().signInWithEmailAndPassword(email, pass)
     .then(() => {
-      toast('👋', 'Hoş geldin!', 's');
+      RateLimit.reset(RL.USER_LOGIN.key);
+      toast('\ud83d\udc4b', 'Hoş geldin!', 's');
       closeModal('auth-modal');
     })
     .catch((error) => {
-      err.textContent = "E-posta veya şifre hatalı.";
+      err.textContent = 'E-posta veya şifre hatalı.' + (rl.remaining > 0 ? ' (' + rl.remaining + ' hakkınız kaldı)' : '');
     });
 }
 
