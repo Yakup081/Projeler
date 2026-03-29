@@ -142,6 +142,7 @@
 <div id="toast-container"></div>
 
 <script src="products.js"></script>
+<script>function _getProds(){return(typeof AdminProducts!=="undefined")?AdminProducts.getAll():PRODUCTS;}</script>
 
 <!-- Firebase Tarayıcı Kütüphaneleri -->
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -174,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
   productId = parseInt(params.get('id'));
   if (!productId) { window.location.href = 'index.html'; return; }
-  const p = PRODUCTS.find(x => x.id === productId);
+  const p = _getProds().find(x => x.id === productId);
   if (!p) { window.location.href = 'index.html'; return; }
   renderCatNav(p.cat);
   renderProductPage(p);
@@ -375,7 +376,7 @@ function renderTabs(p) {
 }
 
 function renderRelated(p) {
-  const related = PRODUCTS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 5);
+  const related = _getProds().filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 5);
   const grid = document.getElementById('related-grid');
   if (!grid || !related.length) return;
   grid.innerHTML = related.map(r => {
@@ -403,7 +404,7 @@ function renderRelated(p) {
 
 // ── ACTIONS ────────────────────────────────────────────────────
 function changeQty(delta) {
-  const p = PRODUCTS.find(x => x.id === productId);
+  const p = _getProds().find(x => x.id === productId);
   qty = Math.max(p.minOrder, Math.min(p.maxOrder, qty + delta));
   document.getElementById('qty-display').textContent = qty;
 }
@@ -413,7 +414,7 @@ function addToCart(id) {
   Store.addToCart(id, qty);
   const btn = document.getElementById('main-add-btn');
   if (btn) { btn.textContent = `✓ ${qty} adet eklendi`; btn.classList.add('added'); setTimeout(() => { btn.textContent = '🛒 Sepete Ekle'; btn.classList.remove('added'); }, 2000); }
-  const p = PRODUCTS.find(x => x.id === id);
+  const p = _getProds().find(x => x.id === id);
   toast('🛒', `${qty} × ${p.name} sepete eklendi`, 's');
   renderHeader();
 }
@@ -422,7 +423,7 @@ function handleAddRelated(e, id) {
   e.stopPropagation();
   if (!Store.getUser()) { openAuthModal(); return; }
   Store.addToCart(id, 1);
-  const p = PRODUCTS.find(x => x.id === id);
+  const p = _getProds().find(x => x.id === id);
   toast('🛒', `${p.name} eklendi`, 's');
   renderHeader();
 }
@@ -444,7 +445,7 @@ function toggleFav(id) {
 }
 
 function shareProduct() {
-  const p = PRODUCTS.find(x => x.id === productId);
+  const p = _getProds().find(x => x.id === productId);
   if (navigator.share) {
     navigator.share({ title: p.name, text: `Gül Asya'da ${p.name} — ${fmt(p.price)}`, url: window.location.href });
   } else {
