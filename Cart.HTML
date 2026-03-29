@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sepetim — Gül Asya Mini Market</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.cart-page { max-width: 1100px; margin: 0 auto; padding: 20px 24px 48px; }
+.cart-title { font-size: 24px; font-weight: 900; margin-bottom: 22px; display: flex; align-items: center; gap: 10px; }
+.cart-layout { display: grid; grid-template-columns: 1fr 340px; gap: 22px; }
+@media(max-width:800px){ .cart-layout { grid-template-columns: 1fr; } }
+
+/* CART LIST */
+.cart-box { background: #fff; border: 1.5px solid var(--gray4); border-radius: var(--rad); overflow: hidden; }
+.cart-box-header { padding: 14px 18px; border-bottom: 1px solid var(--gray4); display: flex; align-items: center; justify-content: space-between; }
+.cart-box-header-title { font-size: 15px; font-weight: 900; }
+.cart-item { display: flex; align-items: center; gap: 13px; padding: 14px 18px; border-bottom: 1px solid #f5f5f5; transition: background .15s; }
+.cart-item:last-child { border-bottom: none; }
+.cart-item:hover { background: #fafafa; }
+.ci-img { width: 62px; height: 62px; border-radius: 9px; border: 1px solid var(--gray4); background: #f9f9f9; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; cursor: pointer; }
+.ci-img img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+.ci-info { flex: 1; min-width: 0; }
+.ci-brand { font-size: 10.5px; font-weight: 800; color: #aaa; text-transform: uppercase; letter-spacing: .05em; }
+.ci-name { font-size: 14px; font-weight: 800; cursor: pointer; }
+.ci-name:hover { color: var(--r); }
+.ci-size { font-size: 11.5px; color: #aaa; font-weight: 600; }
+.ci-price { font-size: 12px; font-weight: 700; color: #888; margin-top: 2px; }
+.ci-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.ci-total { font-size: 17px; font-weight: 900; min-width: 80px; text-align: right; }
+.ci-del { color: #ccc; background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; transition: color .2s; border-radius: 4px; }
+.ci-del:hover { color: var(--r); background: var(--rl); }
+
+/* CART EMPTY */
+.cart-empty { text-align: center; padding: 48px 24px; }
+.cart-empty-icon { font-size: 64px; margin-bottom: 14px; }
+.cart-empty-title { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
+.cart-empty-sub { font-size: 14px; color: #888; font-weight: 600; margin-bottom: 22px; }
+
+/* SUMMARY */
+.summary-box { background: #fff; border: 1.5px solid var(--gray4); border-radius: var(--rad); padding: 20px; position: sticky; top: 88px; }
+.summary-title { font-size: 16px; font-weight: 900; margin-bottom: 16px; }
+.summary-row { display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 700; padding: 5px 0; }
+.summary-row .label { color: #888; }
+.summary-row.total { font-size: 17px; font-weight: 900; border-top: 2px solid var(--blk); margin-top: 8px; padding-top: 12px; }
+.summary-row.total .label { color: var(--blk); }
+.free-shipping { background: var(--gl); border: 1px solid #86efac; border-radius: 8px; padding: 10px 13px; font-size: 12.5px; font-weight: 700; color: var(--green); margin: 10px 0; display: flex; align-items: center; gap: 6px; }
+.coupon-row { display: flex; gap: 8px; margin: 14px 0; }
+.coupon-row input { flex: 1; padding: 9px 12px; border: 1.5px solid var(--gray4); border-radius: 7px; font-size: 13px; font-weight: 700; outline: none; }
+.coupon-row input:focus { border-color: var(--r); }
+.coupon-row button { padding: 9px 14px; background: var(--blk); color: #fff; border: none; border-radius: 7px; font-size: 12.5px; font-weight: 800; cursor: pointer; transition: all .2s; white-space: nowrap; }
+.coupon-row button:hover { background: var(--r); }
+
+/* CHECKOUT STEPS */
+.checkout-wrap { max-width: 680px; margin: 0 auto; }
+.steps { display: flex; margin-bottom: 24px; }
+.step { flex: 1; text-align: center; font-size: 12px; font-weight: 800; padding: 10px 0; border-bottom: 3px solid var(--gray4); color: #aaa; position: relative; }
+.step::before { content: attr(data-num); width: 24px; height: 24px; border-radius: 50%; background: var(--gray4); color: #aaa; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px; }
+.step.active { color: var(--blk); border-bottom-color: var(--blk); }
+.step.active::before { background: var(--blk); color: #fff; }
+.step.done { color: var(--green); border-bottom-color: var(--green); }
+.step.done::before { background: var(--green); color: #fff; content: '✓'; }
+
+.checkout-card { background: #fff; border: 1.5px solid var(--gray4); border-radius: var(--rad); padding: 24px; margin-bottom: 16px; }
+.checkout-card-title { font-size: 16px; font-weight: 900; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card-input-wrap { position: relative; }
+.card-icons { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; font-size: 20px; }
+.order-items-preview { background: var(--gray5); border-radius: 9px; padding: 14px; margin-bottom: 14px; }
+.oi-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 3px 0; }
+.oi-total { border-top: 1px solid var(--gray4); margin-top: 6px; padding-top: 8px; font-size: 15px; font-weight: 900; }
+
+/* SUCCESS */
+.success-page { text-align: center; padding: 32px 0; }
+.success-circle { width: 80px; height: 80px; border-radius: 50%; background: var(--gl); display: flex; align-items: center; justify-content: center; font-size: 38px; margin: 0 auto 16px; animation: bounceIn .6s cubic-bezier(.34,1.56,.64,1); }
+@keyframes bounceIn { from { transform: scale(0); } to { transform: scale(1); } }
+.success-title { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+.success-sub { font-size: 14px; color: #888; font-weight: 600; line-height: 1.7; margin-bottom: 20px; }
+.order-num { font-family: var(--mono); font-size: 22px; background: var(--gray5); padding: 10px 20px; border-radius: 9px; display: inline-block; letter-spacing: .1em; margin-bottom: 16px; }
+.sms-confirm { display: flex; align-items: center; gap: 10px; background: var(--gl); border: 1px solid #86efac; border-radius: 9px; padding: 12px 16px; font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 20px; }
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar"></div>
+<header class="site-header" id="site-header"></header>
+<div class="cat-nav"><div class="cat-nav-inner" id="cat-nav-inner"></div></div>
+
+<div class="cart-page">
+  <div class="cart-title">🛒 Sepetim <span id="cart-item-count" style="font-size:16px;color:#aaa;font-weight:700"></span></div>
+
+  <!-- CART VIEW -->
+  <div id="cart-view">
+    <div class="cart-layout">
+      <div>
+        <div class="cart-box" id="cart-list"></div>
+      </div>
+      <div>
+        <div class="summary-box" id="summary-box"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKOUT VIEW -->
+  <div id="checkout-view" style="display:none">
+    <div class="checkout-wrap">
+      <div class="steps">
+        <div class="step active" data-num="1" id="step1">Adres</div>
+        <div class="step" data-num="2" id="step2">Ödeme</div>
+        <div class="step" data-num="3" id="step3">Onay</div>
+      </div>
+      <div id="checkout-body"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+<div id="cookie-banner" class="hidden">
+  <div class="cookie-text">🍪 Bu site çerezler kullanır. <a href="privacy.html#cookies">Çerez Politikası</a></div>
+  <button class="btn btn-ghost btn-sm" id="cookie-settings">Ayarlar</button>
+  <button class="btn btn-primary btn-sm" id="cookie-accept">Kabul Et</button>
+</div>
+<div id="toast-container"></div>
+
+<script src="products.js"></script>
+<script src="shared.js"></script>
+<script>
+let checkoutStep = 1;
+let pendingAddr = {}, pendingPayment = {};
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderCatNav('');
+  const params = new URLSearchParams(location.search);
+  if (params.get('checkout') === '1' && Store.getUser()) {
+    startCheckout();
+  } else {
+    renderCart();
+  }
+});
+
+// ── CART RENDER ────────────────────────────────────────────────
+function renderCart() {
+  document.getElementById('cart-view').style.display = 'block';
+  document.getElementById('checkout-view').style.display = 'none';
+  const cart = Store.getCart();
+  document.getElementById('cart-item-count').textContent = cart.length ? `(${Store.cartCount()} ürün)` : '';
+
+  if (!cart.length) {
+    document.getElementById('cart-list').innerHTML = `
+      <div class="cart-empty">
+        <div class="cart-empty-icon">🛒</div>
+        <div class="cart-empty-title">Sepetiniz boş</div>
+        <div class="cart-empty-sub">Alışverişe başlamak için ürünleri sepete ekleyin.</div>
+        <button class="btn btn-primary" onclick="goHome()">🛍️ Alışverişe Başla</button>
+      </div>`;
+    document.getElementById('summary-box').innerHTML = '';
+    return;
+  }
+
+  const prices = Store.getPrices() || {};
+  document.getElementById('cart-list').innerHTML = `
+    <div class="cart-box-header">
+      <span class="cart-box-header-title">${Store.cartCount()} Ürün</span>
+      <button class="btn btn-ghost btn-sm" onclick="clearCartConfirm()">🗑️ Sepeti Boşalt</button>
+    </div>
+    ${cart.map(item => {
+      const p = PRODUCTS.find(x => x.id === item.id);
+      if (!p) return '';
+      const price = prices[p.id] || p.price;
+      return `
+      <div class="cart-item" id="ci-${p.id}">
+        <div class="ci-img" onclick="goProduct(${p.id})">
+          <img src="${p.img}" alt="${p.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🛒</text></svg>'">
+        </div>
+        <div class="ci-info">
+          <div class="ci-brand">${p.brand}</div>
+          <div class="ci-name" onclick="goProduct(${p.id})">${p.name}</div>
+          <div class="ci-size">${p.size}</div>
+          <div class="ci-price">${fmt(price)} / ${p.unit}</div>
+        </div>
+        <div class="ci-right">
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="updateQty(${p.id},-1)">−</button>
+            <span class="qty-val">${item.qty}</span>
+            <button class="qty-btn" onclick="updateQty(${p.id},1)">+</button>
+          </div>
+          <div class="ci-total">${fmt(price * item.qty)}</div>
+          <button class="ci-del" onclick="removeItem(${p.id})">✕</button>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+
+  renderSummary();
+}
+
+function renderSummary() {
+  const total = Store.cartTotal();
+  const delivery = total >= 300 ? 0 : 29.90;
+  const grand = total + delivery;
+  document.getElementById('summary-box').innerHTML = `
+    <div class="summary-title">Sipariş Özeti</div>
+    <div class="summary-row"><span class="label">Ürünler Toplamı</span><span>${fmt(total)}</span></div>
+    <div class="summary-row"><span class="label">Kargo</span><span style="color:${delivery===0?'var(--green)':'inherit'}">${delivery===0?'Ücretsiz':fmt(delivery)}</span></div>
+    ${total < 300 ? `<div style="font-size:12px;color:#888;font-weight:700;padding:4px 0">${fmt(300-total)} daha al → ücretsiz kargo!</div>` : ''}
+    ${total >= 300 ? '<div class="free-shipping">✅ Ücretsiz kargo hakkı kazandınız!</div>' : ''}
+    <div class="coupon-row">
+      <input type="text" id="coupon-input" placeholder="İndirim kodu">
+      <button onclick="applyCoupon()">Uygula</button>
+    </div>
+    <div class="summary-row total"><span class="label">Genel Toplam</span><span>${fmt(grand)}</span></div>
+    <button class="btn btn-primary btn-block btn-lg" style="margin-top:14px" onclick="startCheckout()">
+      Ödemeye Geç →
+    </button>
+    <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px" onclick="goHome()">
+      ← Alışverişe Devam Et
+    </button>
+  `;
+}
+
+// ── CART ACTIONS ─────────────────────────────────────────────
+function updateQty(id, delta) {
+  const cart = Store.getCart();
+  const item = cart.find(i => i.id === id);
+  if (!item) return;
+  const p = PRODUCTS.find(x => x.id === id);
+  item.qty = Math.max(p?.minOrder || 1, Math.min(99, item.qty + delta));
+  Store.setCart(cart);
+  renderCart(); renderHeader();
+}
+
+function removeItem(id) {
+  Store.removeFromCart(id);
+  const p = PRODUCTS.find(x => x.id === id);
+  toast('🗑️', `${p?.name} sepetten çıkarıldı`, 'i');
+  renderCart(); renderHeader();
+}
+
+function clearCartConfirm() {
+  if (confirm('Sepeti tamamen boşaltmak istediğinizden emin misiniz?')) {
+    Store.clearCart(); renderCart(); renderHeader();
+    toast('🗑️', 'Sepet boşaltıldı', 'i');
+  }
+}
+
+function applyCoupon() {
+  const code = document.getElementById('coupon-input')?.value.trim().toUpperCase();
+  const codes = { 'GULASYA10': 10, 'ILK15': 15 };
+  if (codes[code]) toast('🎉', `${codes[code]}% indirim uygulandı!`, 's');
+  else toast('❌', 'Geçersiz kupon kodu', 'e');
+}
+
+// ── CHECKOUT ──────────────────────────────────────────────────
+function startCheckout() {
+  if (!Store.getUser()) { openAuthModal(); toast('⚠️', 'Ödeme için giriş yapın', 'e'); return; }
+  if (!Store.getCart().length) { toast('⚠️', 'Sepetiniz boş', 'e'); return; }
+  checkoutStep = 1;
+  document.getElementById('cart-view').style.display = 'none';
+  document.getElementById('checkout-view').style.display = 'block';
+  renderCheckoutStep();
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step' + i);
+    if (el) el.className = 'step ' + (i < n ? 'done' : i === n ? 'active' : '');
+  });
+}
+
+function renderCheckoutStep() {
+  setStep(checkoutStep);
+  const u = Store.getUser();
+  const total = Store.cartTotal();
+  const delivery = total >= 300 ? 0 : 29.90;
+  const grand = total + delivery;
+  const body = document.getElementById('checkout-body');
+  const prices = Store.getPrices() || {};
+
+  if (checkoutStep === 1) {
+    body.innerHTML = `
+      <div class="checkout-card">
+        <div class="checkout-card-title">📍 Teslimat Bilgileri</div>
+        <div class="form-group"><label class="form-label">Ad Soyad</label>
+          <input class="form-input" id="co-name" value="${u.name + ' ' + u.surname}"></div>
+        <div class="form-group"><label class="form-label">Telefon</label>
+          <input class="form-input" id="co-phone" value="${u.phone || ''}" placeholder="05XXXXXXXXX"></div>
+        <div class="form-group"><label class="form-label">Teslimat Adresi</label>
+          <textarea class="form-input" id="co-addr" rows="3">${u.address || ''}</textarea></div>
+        <div class="form-group"><label class="form-label">Teslimat Notu (opsiyonel)</label>
+          <input class="form-input" id="co-note" placeholder="Kapı kodu, kat bilgisi..."></div>
+        <div class="form-group"><label class="form-label">Teslimat Seçeneği</label>
+          <select class="form-input" id="co-delivery">
+            <option value="standard">Standart Teslimat — ₺29,90</option>
+            <option value="express">Ekspres Teslimat (2-4 saat) — ₺49,90</option>
+            ${total >= 300 ? '<option value="free" selected>Ücretsiz Teslimat ✅</option>' : ''}
+          </select></div>
+        <div id="step1-err" class="form-error"></div>
+        <button class="btn btn-primary btn-block btn-lg" onclick="submitStep1()">Devam Et →</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="renderCart()">← Sepete Dön</button>
+    `;
+  } else if (checkoutStep === 2) {
+    body.innerHTML = `
+      <div class="checkout-card">
+        <div class="checkout-card-title">🧾 Sipariş Özeti</div>
+        <div class="order-items-preview">
+          ${Store.getCart().map(item => {
+            const p = PRODUCTS.find(x => x.id === item.id);
+            if (!p) return '';
+            const pr = prices[p.id] || p.price;
+            return `<div class="oi-row"><span>${p.name} ×${item.qty}</span><span>${fmt(pr*item.qty)}</span></div>`;
+          }).join('')}
+          <div class="oi-row"><span>Kargo</span><span style="color:${delivery===0?'var(--green)':'inherit'}">${delivery===0?'Ücretsiz':fmt(delivery)}</span></div>
+          <div class="oi-row oi-total"><span>Toplam</span><span>${fmt(grand)}</span></div>
+        </div>
+      </div>
+      <div class="checkout-card">
+        <div class="checkout-card-title">💳 Ödeme Yöntemi</div>
+        <div class="form-group">
+          <select class="form-input" id="co-paytype" onchange="toggleCardFields()">
+            <option value="kart">Kredi / Banka Kartı</option>
+            <option value="kapida">Kapıda Nakit Ödeme</option>
+            <option value="kapida-kart">Kapıda Kart ile Ödeme</option>
+          </select>
+        </div>
+        <div id="card-fields">
+          <div class="form-group card-input-wrap">
+            <label class="form-label">Kart Numarası</label>
+            <input class="form-input" id="co-cardno" placeholder="•••• •••• •••• ••••" maxlength="19" oninput="fmtCard(this)">
+            <div class="card-icons">💳</div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Son Kullanma</label>
+              <input class="form-input" id="co-exp" placeholder="AA/YY" maxlength="5" oninput="fmtExp(this)"></div>
+            <div class="form-group"><label class="form-label">CVV</label>
+              <input class="form-input" id="co-cvv" placeholder="•••" maxlength="3" type="password"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Kart Üzerindeki İsim</label>
+            <input class="form-input" id="co-cname" placeholder="AD SOYAD" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></div>
+        </div>
+        <div id="step2-err" class="form-error"></div>
+        <button class="btn btn-green btn-block btn-lg" onclick="submitStep2()">
+          ✓ Siparişi Onayla — ${fmt(grand)}
+        </button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="checkoutStep=1;renderCheckoutStep()">← Adres Bilgileri</button>
+    `;
+  } else if (checkoutStep === 3) {
+    const code = pendingPayment.orderCode || '';
+    body.innerHTML = `
+      <div class="checkout-card">
+        <div class="success-page">
+          <div class="success-circle">✅</div>
+          <div class="success-title">Siparişiniz Alındı!</div>
+          <p class="success-sub">
+            Siparişiniz hazırlanmaya başlandı.<br>
+            Tahmini teslimat: <strong>Bugün ${getDeliveryTime()}</strong>
+          </p>
+          <div class="order-num">#${code}</div>
+          <div class="sms-confirm">📱 Onay SMS'i <strong>${pendingAddr.phone}</strong> numarasına gönderildi</div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="goHome()">🏠 Ana Sayfaya Dön</button>
+            <button class="btn btn-ghost" onclick="window.print()">🖨️ Yazdır</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function submitStep1() {
+  const name = document.getElementById('co-name')?.value.trim();
+  const phone = document.getElementById('co-phone')?.value.trim();
+  const addr = document.getElementById('co-addr')?.value.trim();
+  const err = document.getElementById('step1-err');
+  if (!name || !phone || !addr) { err.textContent = 'Ad soyad, telefon ve adres zorunludur.'; return; }
+  if (!/^0[5][0-9]{9}$/.test(phone.replace(/\s/g,''))) { err.textContent = 'Geçerli bir telefon numarası girin (05XXXXXXXXX).'; return; }
+  pendingAddr = { name, phone, addr, note: document.getElementById('co-note')?.value, delivery: document.getElementById('co-delivery')?.value };
+  checkoutStep = 2; renderCheckoutStep();
+}
+
+function toggleCardFields() {
+  const t = document.getElementById('co-paytype')?.value;
+  const cf = document.getElementById('card-fields');
+  if (cf) cf.style.display = t === 'kart' ? 'block' : 'none';
+}
+
+function submitStep2() {
+  const paytype = document.getElementById('co-paytype')?.value;
+  if (paytype === 'kart') {
+    const cardno = (document.getElementById('co-cardno')?.value || '').replace(/\s/g,'');
+    const exp = document.getElementById('co-exp')?.value || '';
+    const cvv = document.getElementById('co-cvv')?.value || '';
+    const cname = document.getElementById('co-cname')?.value || '';
+    const err = document.getElementById('step2-err');
+    if (cardno.length < 16 || !exp.includes('/') || cvv.length < 3 || !cname) {
+      err.textContent = 'Lütfen kart bilgilerini eksiksiz doldurun.'; return;
+    }
+    const expParts = exp.split('/');
+    const month = parseInt(expParts[0]), year = parseInt('20' + expParts[1]);
+    const now = new Date();
+    if (month < 1 || month > 12 || year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1)) {
+      document.getElementById('step2-err').textContent = 'Kart son kullanma tarihi geçmiş.'; return;
+    }
+    pendingPayment.cardLast4 = cardno.slice(-4);
+  }
+  placeOrder(paytype);
+}
+
+function placeOrder(paytype) {
+  const total = Store.cartTotal();
+  const delivery = total >= 300 ? 0 : 29.90;
+  const grand = total + delivery;
+  const code = 'GA' + Date.now().toString().slice(-7);
+  const order = {
+    id: code,
+    date: new Date().toLocaleString('tr-TR'),
+    user: Store.getUser()?.email,
+    userName: pendingAddr.name,
+    phone: pendingAddr.phone,
+    addr: pendingAddr.addr,
+    note: pendingAddr.note,
+    deliveryType: pendingAddr.delivery,
+    paytype,
+    cardLast4: pendingPayment.cardLast4,
+    items: Store.getCart().map(i => ({ id: i.id, qty: i.qty, price: (Store.getPrices()||{})[i.id] || PRODUCTS.find(x=>x.id===i.id)?.price || 0 })),
+    total: grand,
+    status: 'Yeni',
+  };
+  const orders = Store.getOrders();
+  orders.push(order);
+  Store.setOrders(orders);
+  Store.sendSMS(pendingAddr.phone, `Gül Asya Mini Market: #${code} numaralı siparişiniz alındı. Toplam: ${fmt(grand)}. Tahmini teslimat: ${getDeliveryTime()}. İyi günler! 🌹`);
+  pendingPayment.orderCode = code;
+  Store.clearCart();
+  renderHeader();
+  checkoutStep = 3;
+  renderCheckoutStep();
+}
+
+function getDeliveryTime() {
+  const now = new Date();
+  now.setHours(now.getHours() + 2);
+  return now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0') + ' – ' + (now.getHours()+1) + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
+function fmtCard(el) { el.value = el.value.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim().slice(0,19); }
+function fmtExp(el) { el.value = el.value.replace(/\D/g,'').replace(/^(\d{2})(\d)/,'$1/$2').slice(0,5); }
+</script>
+</body>
+</html>

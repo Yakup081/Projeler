@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Paneli — Gül Asya Mini Market</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body { background: #f0f0f0; }
+.admin-shell { display: flex; min-height: 100vh; }
+/* SIDEBAR */
+.admin-sidebar {
+  width: 220px; background: var(--blk); flex-shrink: 0;
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  overflow-y: auto;
+}
+.admin-logo { padding: 20px 18px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.admin-logo-title { font-size: 16px; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 8px; }
+.admin-logo-sub { font-size: 10.5px; color: rgba(255,255,255,.4); font-weight: 700; margin-top: 2px; }
+.admin-nav { flex: 1; padding: 12px 0; }
+.anav-item {
+  display: flex; align-items: center; gap: 10px; padding: 11px 18px;
+  font-size: 13px; font-weight: 700; color: rgba(255,255,255,.55);
+  cursor: pointer; transition: all .15s; border-left: 3px solid transparent;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.anav-item:hover { color: #fff; background: rgba(255,255,255,.06); }
+.anav-item.active { color: #fff; background: rgba(220,38,38,.15); border-left: 3px solid var(--r); }
+.anav-icon { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
+.anav-badge { margin-left: auto; background: var(--r); color: #fff; font-size: 10px; font-weight: 900; padding: 1px 7px; border-radius: 100px; }
+.admin-sidebar-footer { padding: 16px 18px; border-top: 1px solid rgba(255,255,255,.08); }
+
+/* MAIN */
+.admin-main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.admin-topbar {
+  background: #fff; border-bottom: 1px solid #eee; padding: 0 24px;
+  display: flex; align-items: center; height: 56px; gap: 16px;
+  position: sticky; top: 0; z-index: 50; box-shadow: var(--sh);
+}
+.admin-topbar-title { font-size: 16px; font-weight: 900; flex: 1; }
+.admin-content { padding: 22px 24px; flex: 1; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 22px; }
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card { background: #fff; border-radius: var(--rad); padding: 18px 20px; box-shadow: var(--sh); border-left: 4px solid var(--blk); }
+.stat-card.red{border-left-color:var(--r)}.stat-card.green{border-left-color:var(--green)}.stat-card.amber{border-left-color:var(--amber)}.stat-card.blue{border-left-color:var(--blue)}
+.stat-n { font-size: 28px; font-weight: 900; letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
+.stat-l { font-size: 11.5px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .05em; }
+
+/* CARD */
+.acard { background: #fff; border-radius: var(--rad); box-shadow: var(--sh); overflow: hidden; margin-bottom: 18px; }
+.acard-header { padding: 14px 18px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.acard-title { font-size: 15px; font-weight: 900; }
+.acard-body { padding: 0; }
+
+/* TABLE */
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+th { padding: 9px 14px; text-align: left; font-size: 11px; font-weight: 900; color: #888; text-transform: uppercase; letter-spacing: .06em; background: #fafafa; border-bottom: 1px solid #eee; }
+td { padding: 11px 14px; font-size: 13px; font-weight: 600; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafafa; }
+.status-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 100px; font-size: 10.5px; font-weight: 900; }
+.s-new{background:#dbeafe;color:#1d4ed8}.s-prep{background:#fef3c7;color:#b45309}.s-sent{background:#dcfce7;color:#15803d}.s-done{background:#f3f4f6;color:#374151}.s-cancel{background:#fee2e2;color:#991b1b}
+
+/* ADMIN TABS */
+.atab-content { display: none; }
+.atab-content.active { display: block; }
+
+/* FORM */
+.admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.admin-form-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
+@media(max-width:600px){ .admin-form-grid,.admin-form-grid.g3{grid-template-columns:1fr} }
+
+/* SEARCH */
+.table-search { padding: 10px 18px; border-bottom: 1px solid #eee; }
+.table-search input { width: 100%; padding: 8px 14px; border: 1.5px solid #eee; border-radius: 7px; font-size: 13px; font-weight: 600; outline: none; }
+.table-search input:focus { border-color: var(--r); }
+
+/* SMS LOG */
+.sms-terminal { background: #111; color: #0f0; font-family: var(--mono); font-size: 12px; padding: 16px; border-radius: 9px; max-height: 320px; overflow-y: auto; line-height: 1.9; }
+.sms-row { border-bottom: 1px solid #1a1a1a; padding: 4px 0; }
+.sms-time { color: #555; }
+.sms-phone { color: #fbbf24; }
+.sms-msg { color: #d4d4d4; }
+
+/* PRODUCT IMG PREVIEW */
+.prod-img-preview { width: 48px; height: 48px; border-radius: 7px; border: 1px solid #eee; object-fit: contain; background: #f9f9f9; padding: 3px; }
+
+/* MINI BTNS */
+.mbtn { padding: 5px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; cursor: pointer; border: none; transition: all .15s; }
+.mbtn-ghost { background: #f5f5f5; color: #444; }
+.mbtn-ghost:hover { background: #e5e5e5; }
+.mbtn-danger { background: var(--rl); color: var(--r); }
+.mbtn-danger:hover { background: var(--r); color: #fff; }
+.mbtn-success { background: var(--gl); color: var(--green); }
+.mbtn-success:hover { background: var(--green); color: #fff; }
+.mbtn-primary { background: var(--blk); color: #fff; }
+.mbtn-primary:hover { background: var(--r); }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="admin-logo">
+      <div class="admin-logo-title">🌹 Gül Asya</div>
+      <div class="admin-logo-sub">Admin Paneli v2.0</div>
+    </div>
+    <nav class="admin-nav">
+      <button class="anav-item active" onclick="showTab('dashboard',this)"><span class="anav-icon">📊</span>Dashboard</button>
+      <button class="anav-item" onclick="showTab('orders',this)"><span class="anav-icon">📦</span>Siparişler<span class="anav-badge" id="new-order-badge">0</span></button>
+      <button class="anav-item" onclick="showTab('products',this)"><span class="anav-icon">🛒</span>Ürünler</button>
+      <button class="anav-item" onclick="showTab('users',this)"><span class="anav-icon">👥</span>Kullanıcılar</button>
+      <button class="anav-item" onclick="showTab('prices',this)"><span class="anav-icon">💰</span>Fiyat Yönetimi</button>
+      <button class="anav-item" onclick="showTab('sms',this)"><span class="anav-icon">📱</span>SMS Kayıtları</button>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <button class="btn btn-ghost btn-sm btn-block" onclick="window.location.href='index.html'" style="color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.15)">← Siteye Dön</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="admin-topbar-title" id="admin-page-title">Dashboard</div>
+      <div style="font-size:12px;color:#aaa;font-weight:700" id="admin-time"></div>
+      <button class="btn btn-ghost btn-sm" onclick="refreshAll()">↻ Yenile</button>
+    </div>
+
+    <div class="admin-content">
+
+      <!-- DASHBOARD -->
+      <div class="atab-content active" id="tab-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card red"><div class="stat-n" id="s-revenue">₺0</div><div class="stat-l">Toplam Gelir</div></div>
+          <div class="stat-card green"><div class="stat-n" id="s-orders">0</div><div class="stat-l">Sipariş Sayısı</div></div>
+          <div class="stat-card blue"><div class="stat-n" id="s-users">0</div><div class="stat-l">Kayıtlı Üye</div></div>
+          <div class="stat-card amber"><div class="stat-n" id="s-products">35</div><div class="stat-l">Aktif Ürün</div></div>
+        </div>
+        <div class="acard">
+          <div class="acard-header">
+            <span class="acard-title">Son Siparişler</span>
+            <button class="mbtn mbtn-primary" onclick="showTab('orders',null)">Tümünü Gör</button>
+          </div>
+          <div class="acard-body table-scroll" id="dash-orders"></div>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div class="atab-content" id="tab-orders">
+        <div class="acard">
+          <div class="acard-header">
+            <span class="acard-title">Tüm Siparişler</span>
+            <div style="display:flex;gap:8px">
+              <select id="order-status-filter" onchange="renderOrdersTable()" style="padding:7px 11px;border:1.5px solid #eee;border-radius:7px;font-weight:700;font-family:inherit;font-size:12.5px;outline:none">
+                <option value="">Tüm Durumlar</option>
+                <option value="Yeni">Yeni</option>
+                <option value="Hazırlanıyor">Hazırlanıyor</option>
+                <option value="Yolda">Yolda</option>
+                <option value="Teslim Edildi">Teslim Edildi</option>
+                <option value="İptal">İptal</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-search"><input type="text" id="order-search" placeholder="Sipariş no, müşteri adı veya telefon ara…" oninput="renderOrdersTable()"></div>
+          <div class="acard-body table-scroll" id="orders-table"></div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="atab-content" id="tab-products">
+        <div class="acard">
+          <div class="acard-header">
+            <span class="acard-title">Ürün Yönetimi</span>
+            <div style="display:flex;gap:8px">
+              <select id="prod-cat-filter" onchange="renderProductsTable()" style="padding:7px 11px;border:1.5px solid #eee;border-radius:7px;font-weight:700;font-family:inherit;font-size:12.5px;outline:none">
+                <option value="">Tüm Kategoriler</option>
+                <option value="gida">Temel Gıda</option>
+                <option value="icecek">İçecek</option>
+                <option value="sut">Süt Ürünleri</option>
+                <option value="atistirmalik">Atıştırmalık</option>
+                <option value="temizlik">Temizlik</option>
+                <option value="kisisel">Kişisel Bakım</option>
+                <option value="dondurulmus">Dondurulmuş</option>
+                <option value="ekmek">Ekmek</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="openProductModal()">+ Yeni Ürün</button>
+            </div>
+          </div>
+          <div class="table-search"><input type="text" id="prod-search" placeholder="Ürün adı veya marka ara…" oninput="renderProductsTable()"></div>
+          <div class="acard-body table-scroll" id="products-table"></div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="atab-content" id="tab-users">
+        <div class="acard">
+          <div class="acard-header"><span class="acard-title">Kayıtlı Kullanıcılar</span></div>
+          <div class="table-search"><input type="text" id="user-search" placeholder="İsim, e-posta veya telefon ara…" oninput="renderUsersTable()"></div>
+          <div class="acard-body table-scroll" id="users-table"></div>
+        </div>
+      </div>
+
+      <!-- PRICES -->
+      <div class="atab-content" id="tab-prices">
+        <div class="acard">
+          <div class="acard-header">
+            <span class="acard-title">Fiyat Yönetimi</span>
+            <button class="btn btn-ghost btn-sm" onclick="resetPrices()">Fiyatları Sıfırla</button>
+          </div>
+          <div class="acard-body table-scroll" id="prices-table"></div>
+        </div>
+      </div>
+
+      <!-- SMS -->
+      <div class="atab-content" id="tab-sms">
+        <div class="acard">
+          <div class="acard-header">
+            <span class="acard-title">SMS Kayıtları</span>
+            <div style="display:flex;gap:8px">
+              <span style="font-size:12px;font-weight:700;color:#888;margin:auto 0" id="sms-count"></span>
+              <button class="mbtn mbtn-danger" onclick="clearSms()">🗑️ Temizle</button>
+            </div>
+          </div>
+          <div style="padding:16px">
+            <div class="sms-terminal" id="sms-terminal"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="order-detail-modal">
+  <div class="modal-box wide">
+    <button class="modal-close">✕</button>
+    <h2 class="modal-title">📦 Sipariş Detayı</h2>
+    <div id="order-detail-body"></div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal-box wide">
+    <button class="modal-close">✕</button>
+    <h2 class="modal-title" id="prod-modal-title">Yeni Ürün Ekle</h2>
+    <div class="admin-form-grid">
+      <div class="form-group"><label class="form-label">Marka *</label><input class="form-input" id="pm-brand"></div>
+      <div class="form-group"><label class="form-label">Ürün Adı *</label><input class="form-input" id="pm-name"></div>
+      <div class="form-group"><label class="form-label">Boyut/Miktar *</label><input class="form-input" id="pm-size" placeholder="500 g"></div>
+      <div class="form-group"><label class="form-label">Birim *</label><input class="form-input" id="pm-unit" placeholder="adet / paket"></div>
+      <div class="form-group"><label class="form-label">Fiyat (₺) *</label><input class="form-input" id="pm-price" type="number" step="0.01"></div>
+      <div class="form-group"><label class="form-label">Eski Fiyat (₺)</label><input class="form-input" id="pm-oldprice" type="number" step="0.01" placeholder="opsiyonel"></div>
+      <div class="form-group"><label class="form-label">Stok %</label><input class="form-input" id="pm-stock" type="number" min="1" max="99" value="75"></div>
+      <div class="form-group"><label class="form-label">Emoji</label><input class="form-input" id="pm-emoji" placeholder="🛒"></div>
+    </div>
+    <div class="form-group" style="margin-top:8px"><label class="form-label">Kategori *</label>
+      <select class="form-input" id="pm-cat">
+        <option value="gida">Temel Gıda</option>
+        <option value="icecek">İçecek</option>
+        <option value="sut">Süt & Süt Ürünleri</option>
+        <option value="atistirmalik">Atıştırmalık</option>
+        <option value="temizlik">Temizlik</option>
+        <option value="kisisel">Kişisel Bakım</option>
+        <option value="dondurulmus">Dondurulmuş</option>
+        <option value="ekmek">Ekmek</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Görsel URL</label><input class="form-input" id="pm-img" placeholder="https://..."></div>
+    <div class="form-group"><label class="form-label">Açıklama</label><textarea class="form-input" id="pm-desc" rows="3" placeholder="Ürün açıklaması..."></textarea></div>
+    <div id="pm-err" class="form-error"></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveProduct()">Kaydet</button>
+      <button class="btn btn-ghost" onclick="closeModal('product-modal')" style="flex:.4">İptal</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="products.js"></script>
+<script src="shared.js"></script>
+<script>
+let currentAdminTab = 'dashboard';
+let editingProdId = null;
+
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 1000);
+  refreshAll();
+});
+
+function updateClock() {
+  const el = document.getElementById('admin-time');
+  if (el) el.textContent = new Date().toLocaleString('tr-TR');
+}
+
+function refreshAll() {
+  renderDashboard();
+  renderOrdersTable();
+  renderProductsTable();
+  renderUsersTable();
+  renderPricesTable();
+  renderSmsLog();
+  updateBadges();
+}
+
+function showTab(tab, btn) {
+  currentAdminTab = tab;
+  document.querySelectorAll('.atab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.anav-item').forEach(b => b.classList.remove('active'));
+  const tc = document.getElementById('tab-' + tab);
+  if (tc) tc.classList.add('active');
+  if (btn) btn.classList.add('active');
+  const titles = { dashboard: 'Dashboard', orders: 'Siparişler', products: 'Ürün Yönetimi', users: 'Kullanıcılar', prices: 'Fiyat Yönetimi', sms: 'SMS Kayıtları' };
+  document.getElementById('admin-page-title').textContent = titles[tab] || tab;
+}
+
+function updateBadges() {
+  const newOrders = Store.getOrders().filter(o => o.status === 'Yeni').length;
+  const el = document.getElementById('new-order-badge');
+  if (el) { el.textContent = newOrders; el.style.display = newOrders ? 'inline' : 'none'; }
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────
+function renderDashboard() {
+  const orders = Store.getOrders();
+  const revenue = orders.filter(o => o.status !== 'İptal').reduce((a, o) => a + o.total, 0);
+  document.getElementById('s-revenue').textContent = fmt(revenue);
+  document.getElementById('s-orders').textContent = orders.length;
+  document.getElementById('s-users').textContent = Store.getUsers().length;
+  document.getElementById('s-products').textContent = PRODUCTS.length;
+  const last10 = [...orders].reverse().slice(0, 10);
+  document.getElementById('dash-orders').innerHTML = ordersHTML(last10);
+}
+
+// ── ORDERS ─────────────────────────────────────────────────────
+function renderOrdersTable() {
+  let orders = [...Store.getOrders()].reverse();
+  const filter = document.getElementById('order-status-filter')?.value;
+  const search = (document.getElementById('order-search')?.value || '').toLowerCase();
+  if (filter) orders = orders.filter(o => o.status === filter);
+  if (search) orders = orders.filter(o =>
+    o.id.toLowerCase().includes(search) ||
+    (o.userName || '').toLowerCase().includes(search) ||
+    (o.phone || '').includes(search)
+  );
+  document.getElementById('orders-table').innerHTML = ordersHTML(orders, true);
+}
+
+function ordersHTML(orders, full = false) {
+  if (!orders.length) return '<div style="padding:20px;text-align:center;color:#aaa;font-weight:700">Sipariş bulunamadı</div>';
+  const statusMap = { Yeni: 's-new', Hazırlanıyor: 's-prep', Yolda: 's-sent', 'Teslim Edildi': 's-done', İptal: 's-cancel' };
+  return `<table><thead><tr>
+    <th>#Kod</th><th>Müşteri</th><th>Telefon</th><th>Toplam</th><th>Tarih</th><th>Durum</th><th>İşlemler</th>
+  </tr></thead><tbody>
+  ${orders.map(o => `<tr>
+    <td style="font-family:var(--mono);font-size:12px">${o.id}</td>
+    <td><strong>${o.userName || o.user}</strong></td>
+    <td style="font-size:12.5px">${o.phone}</td>
+    <td style="font-weight:900">${fmt(o.total)}</td>
+    <td style="font-size:11.5px;color:#888">${o.date}</td>
+    <td><span class="status-chip ${statusMap[o.status]||'s-new'}">${o.status}</span></td>
+    <td style="display:flex;gap:5px">
+      <button class="mbtn mbtn-ghost" onclick="openOrderDetail('${o.id}')">👁 Detay</button>
+      <select style="padding:4px 7px;border:1px solid #eee;border-radius:6px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer" onchange="changeStatus('${o.id}',this.value)">
+        <option value="">Durum Seç</option>
+        ${['Yeni','Hazırlanıyor','Yolda','Teslim Edildi','İptal'].map(s=>`<option value="${s}"${s===o.status?' selected':''}>${s}</option>`).join('')}
+      </select>
+    </td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function openOrderDetail(id) {
+  const o = Store.getOrders().find(x => x.id === id);
+  if (!o) return;
+  const prices = Store.getPrices() || {};
+  document.getElementById('order-detail-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:16px">
+      <div><strong>Sipariş No:</strong><br><span style="font-family:var(--mono)">#${o.id}</span></div>
+      <div><strong>Tarih:</strong><br>${o.date}</div>
+      <div><strong>Müşteri:</strong><br>${o.userName}</div>
+      <div><strong>Telefon:</strong><br>${o.phone}</div>
+      <div><strong>Ödeme:</strong><br>${o.paytype === 'kart' ? '💳 Kredi Kartı' + (o.cardLast4 ? ` (*${o.cardLast4})` : '') : o.paytype === 'kapida' ? '💵 Kapıda Nakit' : '💳 Kapıda Kart'}</div>
+      <div><strong>Teslimat:</strong><br>${o.deliveryType === 'express' ? '⚡ Ekspres' : o.deliveryType === 'free' ? '🎁 Ücretsiz' : '🚚 Standart'}</div>
+      <div style="grid-column:1/-1"><strong>Adres:</strong><br>${o.addr}</div>
+      ${o.note ? `<div style="grid-column:1/-1"><strong>Not:</strong><br>${o.note}</div>` : ''}
+    </div>
+    <div style="background:#f5f5f5;border-radius:9px;padding:14px;margin-bottom:14px;font-size:13px">
+      ${o.items.map(item => {
+        const p = PRODUCTS.find(x => x.id === item.id) || { name: 'Ürün #'+item.id, emoji: '📦' };
+        const pr = item.price || p.price || 0;
+        return `<div style="display:flex;justify-content:space-between;padding:3px 0;font-weight:700"><span>${p.emoji} ${p.name} ×${item.qty}</span><span>${fmt(pr*item.qty)}</span></div>`;
+      }).join('')}
+      <div style="display:flex;justify-content:space-between;border-top:1px solid #ddd;margin-top:6px;padding-top:8px;font-size:15px;font-weight:900"><span>Toplam</span><span>${fmt(o.total)}</span></div>
+    </div>
+    <div class="form-group"><label class="form-label">Durum Güncelle</label>
+      <select class="form-input" id="od-status-sel">
+        ${['Yeni','Hazırlanıyor','Yolda','Teslim Edildi','İptal'].map(s=>`<option value="${s}"${s===o.status?' selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveOrderStatus('${o.id}')">✓ Güncelle & SMS Gönder</button>
+      <button class="btn btn-ghost" onclick="closeModal('order-detail-modal')" style="flex:.4">Kapat</button>
+    </div>
+  `;
+  openModal('order-detail-modal');
+}
+
+function saveOrderStatus(id) {
+  const st = document.getElementById('od-status-sel')?.value;
+  if (!st) return;
+  changeStatus(id, st);
+  closeModal('order-detail-modal');
+}
+
+function changeStatus(id, st) {
+  if (!st) return;
+  const orders = Store.getOrders();
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const old = o.status;
+  o.status = st;
+  Store.setOrders(orders);
+  const msgs = {
+    Hazırlanıyor: `#${id} siparişiniz hazırlanıyor. Kısa süre içinde yola çıkacak! 🌹`,
+    Yolda: `#${id} siparişiniz yola çıktı! Tahmini süre 30-60 dk. 🚚`,
+    'Teslim Edildi': `#${id} siparişiniz teslim edildi. Afiyet olsun! Bizi değerlendirmeyi unutmayın. 🌹`,
+    İptal: `#${id} siparişiniz iptal edildi. Detay için bizi arayın: 0850 XXX XX XX`,
+  };
+  if (msgs[st] && o.phone) Store.sendSMS(o.phone, `Gül Asya Mini Market: ${msgs[st]}`);
+  toast('✓', `#${id} → ${st}`, 's');
+  renderOrdersTable(); renderDashboard(); updateBadges();
+  if (st !== old) renderSmsLog();
+}
+
+// ── PRODUCTS ───────────────────────────────────────────────────
+function renderProductsTable() {
+  const catFilter = document.getElementById('prod-cat-filter')?.value || '';
+  const search = (document.getElementById('prod-search')?.value || '').toLowerCase();
+  let list = PRODUCTS;
+  if (catFilter) list = list.filter(p => p.cat === catFilter);
+  if (search) list = list.filter(p => (p.name + ' ' + p.brand).toLowerCase().includes(search));
+  const prices = Store.getPrices() || {};
+
+  document.getElementById('products-table').innerHTML = `
+    <table><thead><tr>
+      <th>Görsel</th><th>Marka / Ürün</th><th>Boyut</th><th>Kategori</th><th>Mevcut Fiyat</th><th>Stok</th><th>İşlem</th>
+    </tr></thead><tbody>
+    ${list.map(p => {
+      const price = prices[p.id] || p.price;
+      const stock = p.stock;
+      const stockColor = stock >= 50 ? 'var(--green)' : stock >= 20 ? 'var(--amber)' : 'var(--r)';
+      return `<tr>
+        <td><img class="prod-img-preview" src="${p.img}" alt="" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>${p.emoji}</text></svg>'"></td>
+        <td><div style="font-weight:800">${p.name}</div><div style="font-size:11px;color:#aaa">${p.brand}</div></td>
+        <td style="font-size:12px;color:#888">${p.size}</td>
+        <td><span class="badge badge-k">${catLabel(p.cat)}</span></td>
+        <td style="font-weight:900">${fmt(price)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:44px;height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${stock}%;background:${stockColor};border-radius:3px"></div>
+            </div>
+            <span style="font-size:12px;font-weight:800;color:${stockColor}">${stock}%</span>
+          </div>
+        </td>
+        <td style="display:flex;gap:5px">
+          <button class="mbtn mbtn-ghost" onclick="openProductModal(${p.id})">✏️</button>
+          <button class="mbtn mbtn-danger" onclick="deleteProduct(${p.id})">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+}
+
+function openProductModal(id = null) {
+  editingProdId = id;
+  const title = document.getElementById('prod-modal-title');
+  title.textContent = id ? 'Ürün Düzenle' : 'Yeni Ürün Ekle';
+  const fields = ['pm-brand','pm-name','pm-size','pm-unit','pm-price','pm-oldprice','pm-stock','pm-emoji','pm-img','pm-desc'];
+  if (id) {
+    const p = PRODUCTS.find(x => x.id === id);
+    if (p) {
+      document.getElementById('pm-brand').value = p.brand;
+      document.getElementById('pm-name').value = p.name;
+      document.getElementById('pm-size').value = p.size;
+      document.getElementById('pm-unit').value = p.unit;
+      document.getElementById('pm-price').value = p.price;
+      document.getElementById('pm-oldprice').value = p.oldPrice || '';
+      document.getElementById('pm-stock').value = p.stock;
+      document.getElementById('pm-emoji').value = p.emoji;
+      document.getElementById('pm-cat').value = p.cat;
+      document.getElementById('pm-img').value = p.img || '';
+      document.getElementById('pm-desc').value = p.desc || '';
+    }
+  } else {
+    fields.forEach(f => { const el=document.getElementById(f); if(el) el.value=''; });
+    document.getElementById('pm-stock').value = '75';
+    document.getElementById('pm-emoji').value = '🛒';
+  }
+  document.getElementById('pm-err').textContent = '';
+  openModal('product-modal');
+}
+
+function saveProduct() {
+  const brand = document.getElementById('pm-brand').value.trim();
+  const name = document.getElementById('pm-name').value.trim();
+  const size = document.getElementById('pm-size').value.trim();
+  const unit = document.getElementById('pm-unit').value.trim();
+  const price = parseFloat(document.getElementById('pm-price').value);
+  const oldPrice = parseFloat(document.getElementById('pm-oldprice').value) || null;
+  const stock = parseInt(document.getElementById('pm-stock').value) || 75;
+  const emoji = document.getElementById('pm-emoji').value.trim() || '🛒';
+  const cat = document.getElementById('pm-cat').value;
+  const img = document.getElementById('pm-img').value.trim();
+  const desc = document.getElementById('pm-desc').value.trim();
+  const err = document.getElementById('pm-err');
+  if (!brand || !name || !size || !unit || isNaN(price) || price <= 0) {
+    err.textContent = 'Zorunlu alanları (* ile işaretli) doldurun.'; return;
+  }
+  if (editingProdId) {
+    const p = PRODUCTS.find(x => x.id === editingProdId);
+    if (p) Object.assign(p, { brand, name, size, unit, price, oldPrice, stock, emoji, cat, img, desc });
+    toast('✓', 'Ürün güncellendi', 's');
+  } else {
+    const newId = Date.now();
+    PRODUCTS.push({ id: newId, brand, name, size, unit, price, oldPrice, stock, emoji, cat, img, desc, features: [], minOrder: 1, maxOrder: 20 });
+    toast('✓', 'Yeni ürün eklendi', 's');
+  }
+  closeModal('product-modal');
+  renderProductsTable();
+  renderDashboard();
+}
+
+function deleteProduct(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`"${p.name}" ürününü silmek istiyor musunuz?`)) return;
+  const idx = PRODUCTS.indexOf(p);
+  PRODUCTS.splice(idx, 1);
+  toast('🗑️', `${p.name} silindi`, 'i');
+  renderProductsTable(); renderDashboard();
+}
+
+// ── USERS ──────────────────────────────────────────────────────
+function renderUsersTable() {
+  const search = (document.getElementById('user-search')?.value || '').toLowerCase();
+  let users = Store.getUsers();
+  if (search) users = users.filter(u => (u.name+' '+u.surname+' '+u.email+' '+(u.phone||'')).toLowerCase().includes(search));
+  const el = document.getElementById('users-table');
+  if (!users.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#aaa;font-weight:700">Kayıtlı kullanıcı yok</div>'; return; }
+  el.innerHTML = `<table><thead><tr>
+    <th>Ad Soyad</th><th>E-posta</th><th>Telefon</th><th>Adres</th><th>Kayıt</th><th>Sipariş</th><th>İşlem</th>
+  </tr></thead><tbody>
+  ${users.map(u => {
+    const oc = Store.getOrders().filter(o => o.user === u.email).length;
+    return `<tr>
+      <td><strong>${u.name} ${u.surname}</strong></td>
+      <td style="font-size:12px">${u.email}</td>
+      <td>${u.phone||'-'}</td>
+      <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis">${u.address||'-'}</td>
+      <td style="font-size:11.5px;color:#888">${u.createdAt}</td>
+      <td style="font-weight:900;text-align:center">${oc}</td>
+      <td><button class="mbtn mbtn-danger" onclick="deleteUser(${u.id})">🗑️</button></td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
+}
+
+function deleteUser(id) {
+  if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
+  const users = Store.getUsers().filter(u => u.id !== id);
+  Store.setUsers(users);
+  const cur = Store.getUser();
+  if (cur && cur.id === id) Store.setUser(null);
+  renderUsersTable(); renderDashboard();
+  toast('🗑️', 'Kullanıcı silindi', 'i');
+}
+
+// ── PRICES ─────────────────────────────────────────────────────
+function renderPricesTable() {
+  const prices = Store.getPrices() || {};
+  document.getElementById('prices-table').innerHTML = `
+    <table><thead><tr>
+      <th>Ürün</th><th>Orijinal Fiyat</th><th>Aktif Fiyat</th><th>Eski Fiyat</th><th>Yeni Fiyat Gir</th><th>İşlem</th>
+    </tr></thead><tbody>
+    ${PRODUCTS.map(p => `<tr>
+      <td><strong>${p.emoji} ${p.name}</strong><br><span style="font-size:11px;color:#aaa">${p.brand} · ${p.size}</span></td>
+      <td style="font-size:12.5px;color:#aaa">${fmt(p.price)}</td>
+      <td style="font-weight:900;color:var(--r)">${fmt(prices[p.id]||p.price)}</td>
+      <td><input class="form-input" id="op-${p.id}" value="${p.oldPrice||''}" style="padding:6px 10px;font-size:12px;width:110px" placeholder="opsiyonel" type="number" step="0.01"></td>
+      <td><input class="form-input" id="np-${p.id}" value="${(prices[p.id]||p.price).toFixed(2)}" style="padding:6px 10px;font-size:12px;width:110px" type="number" step="0.01"></td>
+      <td><button class="mbtn mbtn-success" onclick="savePrice(${p.id})">✓ Kaydet</button></td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function savePrice(id) {
+  const np = parseFloat(document.getElementById('np-'+id)?.value);
+  const op = parseFloat(document.getElementById('op-'+id)?.value) || null;
+  if (isNaN(np) || np <= 0) { toast('⚠️', 'Geçerli bir fiyat girin', 'e'); return; }
+  const prices = Store.getPrices() || {};
+  prices[id] = np;
+  Store.setPrices(prices);
+  const p = PRODUCTS.find(x => x.id === id);
+  if (p) p.oldPrice = op;
+  toast('✓', `${p?.name} → ${fmt(np)}`, 's');
+  renderPricesTable();
+}
+
+function resetPrices() {
+  if (!confirm('Tüm fiyatları orijinal değerlere sıfırlamak istiyor musunuz?')) return;
+  Store.setPrices(null);
+  PRODUCTS.forEach(p => p.oldPrice = p.oldPrice);
+  toast('↺', 'Fiyatlar sıfırlandı', 'i');
+  renderPricesTable();
+}
+
+// ── SMS ────────────────────────────────────────────────────────
+function renderSmsLog() {
+  const logs = Store.getSmsLog();
+  const el = document.getElementById('sms-terminal');
+  const cnt = document.getElementById('sms-count');
+  if (cnt) cnt.textContent = `${logs.length} kayıt`;
+  if (!el) return;
+  if (!logs.length) { el.innerHTML = '<span style="color:#555">Henüz SMS gönderilmedi.</span>'; return; }
+  el.innerHTML = logs.map(l => `
+    <div class="sms-row">
+      <span class="sms-time">[${l.time}]</span>
+      <span class="sms-phone"> ${l.phone} </span>
+      <span class="sms-msg">→ ${l.msg}</span>
+    </div>`).join('');
+}
+
+function clearSms() {
+  if (!confirm('SMS kayıtları temizlensin mi?')) return;
+  Store.setSmsLog([]);
+  renderSmsLog();
+  toast('🗑️', 'SMS kayıtları temizlendi', 'i');
+}
+</script>
+</body>
+</html>

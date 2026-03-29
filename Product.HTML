@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ürün Detayı — Gül Asya Mini Market</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.product-page { max-width: 1280px; margin: 0 auto; padding: 16px 24px 40px; }
+.product-main { display: grid; grid-template-columns: 460px 1fr; gap: 36px; margin-bottom: 40px; }
+@media(max-width:900px){ .product-main { grid-template-columns: 1fr; } }
+
+/* IMAGE GALLERY */
+.img-gallery { position: sticky; top: 88px; }
+.img-main {
+  width: 100%; aspect-ratio: 1; border-radius: var(--rad);
+  background: #f9f9f9; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; margin-bottom: 10px; border: 1.5px solid var(--gray4);
+  cursor: zoom-in; position: relative;
+}
+.img-main img { width: 100%; height: 100%; object-fit: contain; padding: 24px; transition: transform .4s; }
+.img-main:hover img { transform: scale(1.06); }
+.img-badge-pos { position: absolute; top: 14px; left: 14px; display: flex; flex-direction: column; gap: 5px; }
+.img-fav {
+  position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%;
+  background: #fff; border: 1.5px solid var(--gray4); display: flex; align-items: center;
+  justify-content: center; font-size: 18px; cursor: pointer; transition: all .2s; box-shadow: var(--sh);
+}
+.img-fav:hover, .img-fav.active { background: var(--rl); border-color: var(--rm); transform: scale(1.08); }
+
+/* PRODUCT INFO */
+.prod-info {}
+.prod-brand { font-size: 12px; font-weight: 800; color: var(--r); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 5px; }
+.prod-name { font-size: 26px; font-weight: 900; letter-spacing: -.5px; line-height: 1.2; margin-bottom: 8px; }
+.prod-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.prod-size-badge { background: var(--gray5); color: var(--gray2); padding: 4px 11px; border-radius: 100px; font-size: 12px; font-weight: 700; }
+.prod-stock-badge { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; }
+.stock-dot { width: 7px; height: 7px; border-radius: 50%; }
+.stock-dot.high { background: var(--green); }
+.stock-dot.med { background: var(--amber); }
+.stock-dot.low { background: var(--r); animation: blink 1s infinite; }
+
+.price-box { background: var(--rv); border: 1.5px solid #fca5a5; border-radius: var(--rad); padding: 18px 20px; margin-bottom: 18px; }
+.price-old { font-size: 15px; color: #bbb; text-decoration: line-through; font-weight: 700; margin-bottom: 2px; }
+.price-current { font-size: 36px; font-weight: 900; color: var(--blk); letter-spacing: -2px; line-height: 1; }
+.price-unit { font-size: 13px; color: var(--gray2); font-weight: 600; margin-top: 3px; }
+.price-save { display: inline-flex; align-items: center; gap: 5px; background: var(--r); color: #fff; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 800; margin-top: 8px; }
+
+/* QTY & ADD */
+.add-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.qty-ctrl.lg .qty-btn { width: 40px; height: 40px; font-size: 20px; }
+.qty-ctrl.lg .qty-val { min-width: 48px; font-size: 17px; }
+.add-btn-main { flex: 1; padding: 14px; background: var(--blk); color: #fff; font-size: 15px; font-weight: 900; border: none; border-radius: var(--rad-sm); cursor: pointer; transition: all .25s; display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 200px; }
+.add-btn-main:hover { background: var(--r); box-shadow: var(--sh-r); transform: translateY(-1px); }
+.add-btn-main.added { background: var(--green); }
+.buy-now-btn { flex: 1; padding: 14px; background: var(--rl); color: var(--rd); border: 2px solid var(--rm); font-size: 14px; font-weight: 900; border-radius: var(--rad-sm); cursor: pointer; transition: all .25s; min-width: 160px; }
+.buy-now-btn:hover { background: var(--r); color: #fff; border-color: var(--r); }
+
+/* DELIVERY OPTIONS */
+.delivery-box { border: 1.5px solid var(--gray4); border-radius: var(--rad); overflow: hidden; margin-bottom: 16px; }
+.delivery-opt { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; border-bottom: 1px solid var(--gray4); transition: background .15s; }
+.delivery-opt:last-child { border-bottom: none; }
+.delivery-opt:hover { background: var(--gray5); }
+.delivery-opt input[type=radio] { accent-color: var(--r); width: 16px; height: 16px; flex-shrink: 0; }
+.delivery-opt-content { flex: 1; }
+.delivery-opt-title { font-size: 13.5px; font-weight: 800; }
+.delivery-opt-sub { font-size: 12px; color: var(--gray2); font-weight: 600; margin-top: 1px; }
+.delivery-opt-price { font-size: 13px; font-weight: 900; }
+.delivery-opt-price.free { color: var(--green); }
+
+/* PRODUCT TABS */
+.prod-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--gray4); margin-bottom: 20px; }
+.prod-tab { padding: 11px 18px; font-size: 13.5px; font-weight: 800; color: var(--gray2); border-bottom: 3px solid transparent; border: none; background: none; cursor: pointer; transition: all .2s; }
+.prod-tab:hover { color: var(--blk); }
+.prod-tab.active { color: var(--r); border-bottom: 3px solid var(--r); }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn .2s; }
+
+/* DESCRIPTION */
+.desc-text { font-size: 14px; line-height: 1.8; color: var(--gray); font-weight: 600; margin-bottom: 18px; }
+.feature-list { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+.feature-item { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; padding: 9px 13px; background: var(--gray5); border-radius: var(--rad-sm); }
+.feature-item::before { content: '✓'; color: var(--green); font-weight: 900; }
+
+/* NUTRITION */
+.nutrition-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.nutrition-table th { text-align: left; padding: 9px 14px; background: var(--gray5); font-weight: 800; font-size: 12px; color: var(--gray2); text-transform: uppercase; letter-spacing: .05em; }
+.nutrition-table td { padding: 10px 14px; border-bottom: 1px solid var(--gray4); font-weight: 700; }
+.nutrition-table tr:last-child td { border-bottom: none; }
+
+/* REVIEWS */
+.review-card { background: var(--gray5); border-radius: var(--rad-sm); padding: 16px; margin-bottom: 10px; }
+.review-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.review-user { font-size: 13.5px; font-weight: 800; }
+.review-date { font-size: 11.5px; color: var(--gray2); font-weight: 600; }
+.review-text { font-size: 13.5px; color: var(--gray); line-height: 1.6; font-weight: 600; }
+
+/* RELATED */
+.related-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; }
+@media(max-width:900px){ .related-grid { grid-template-columns: repeat(3,1fr); } }
+@media(max-width:500px){ .related-grid { grid-template-columns: repeat(2,1fr); } }
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar"></div>
+<header class="site-header" id="site-header"></header>
+<div class="cat-nav"><div class="cat-nav-inner" id="cat-nav-inner"></div></div>
+
+<div class="product-page">
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <div class="product-main" id="product-main">
+    <div style="text-align:center;padding:60px;color:#aaa">Yükleniyor…</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="prod-tabs">
+    <button class="prod-tab active" onclick="showTab('desc',this)">Ürün Açıklaması</button>
+    <button class="prod-tab" onclick="showTab('nutrition',this)">Besin Değerleri</button>
+    <button class="prod-tab" onclick="showTab('reviews',this)">Yorumlar (3)</button>
+    <button class="prod-tab" onclick="showTab('delivery-info',this)">Teslimat Bilgisi</button>
+  </div>
+  <div id="tab-desc" class="tab-content active"></div>
+  <div id="tab-nutrition" class="tab-content"></div>
+  <div id="tab-reviews" class="tab-content"></div>
+  <div id="tab-delivery-info" class="tab-content"></div>
+
+  <!-- RELATED -->
+  <div class="section-header" style="margin-top:32px">
+    <span class="section-title">Benzer Ürünler</span>
+  </div>
+  <div class="related-grid" id="related-grid"></div>
+</div>
+
+<footer class="site-footer" id="site-footer"></footer>
+<div id="cookie-banner" class="hidden">
+  <div class="cookie-text">🍪 Bu site çerezler kullanır. <a href="privacy.html#cookies">Çerez Politikası</a></div>
+  <button class="btn btn-ghost btn-sm" id="cookie-settings">Ayarlar</button>
+  <button class="btn btn-primary btn-sm" id="cookie-accept">Kabul Et</button>
+</div>
+<div id="toast-container"></div>
+
+<script src="products.js"></script>
+<script src="shared.js"></script>
+<script>
+let productId = null;
+let qty = 1;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  productId = parseInt(params.get('id'));
+  if (!productId) { window.location.href = 'index.html'; return; }
+  const p = PRODUCTS.find(x => x.id === productId);
+  if (!p) { window.location.href = 'index.html'; return; }
+  renderCatNav(p.cat);
+  renderProductPage(p);
+  renderTabs(p);
+  renderRelated(p);
+  document.title = `${p.name} — Gül Asya Mini Market`;
+});
+
+function renderProductPage(p) {
+  const prices = Store.getPrices() || {};
+  const price = prices[p.id] || p.price;
+  const disc = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : null;
+  const isFav = Store.isFav(p.id);
+  const stockLevel = p.stock >= 50 ? 'high' : p.stock >= 20 ? 'med' : 'low';
+  const stockLabel = p.stock >= 50 ? 'Stokta var' : p.stock >= 20 ? 'Azalıyor' : 'Az kaldı';
+
+  // Breadcrumb
+  document.getElementById('breadcrumb').innerHTML = `
+    <a href="index.html">Ana Sayfa</a><span class="sep">›</span>
+    <a href="index.html?cat=${p.cat}">${catLabel(p.cat)}</a><span class="sep">›</span>
+    <span class="current">${p.name}</span>`;
+
+  document.getElementById('product-main').innerHTML = `
+    <!-- IMAGE -->
+    <div class="img-gallery">
+      <div class="img-main">
+        <div class="img-badge-pos">
+          ${disc ? `<div class="pb pb-r" style="font-size:12px;padding:4px 10px">%${disc} İNDİRİM</div>` : ''}
+          ${p.stock < 25 ? '<div class="pb pb-a" style="font-size:12px;padding:4px 10px">Az Kaldı</div>' : ''}
+        </div>
+        <img id="main-img" src="${p.img}" alt="${p.name}"
+          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🛒</text></svg>'">
+        <div class="img-fav${isFav ? ' active' : ''}" id="prod-fav" onclick="toggleFav(${p.id})">
+          ${isFav ? '❤️' : '🤍'}
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="prod-info">
+      <div class="prod-brand">${p.brand}</div>
+      <h1 class="prod-name">${p.name}</h1>
+      <div class="prod-meta">
+        <span class="prod-size-badge">📦 ${p.size}</span>
+        <span class="prod-size-badge">🏷️ ${catLabel(p.cat)}</span>
+        ${p.subcat ? `<span class="prod-size-badge">${p.subcat}</span>` : ''}
+        <span class="prod-stock-badge">
+          <div class="stock-dot ${stockLevel}"></div>
+          ${stockLabel}
+        </span>
+      </div>
+
+      <!-- STARS -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div class="stars">
+          ${'★★★★★'.split('').map((s, i) => `<span class="star filled">${s}</span>`).join('')}
+        </div>
+        <span style="font-size:13px;font-weight:700;color:#888">4.8 (47 yorum)</span>
+      </div>
+
+      <!-- PRICE BOX -->
+      <div class="price-box">
+        ${p.oldPrice ? `<div class="price-old">${fmt(p.oldPrice)}</div>` : ''}
+        <div class="price-current">${fmt(price)}</div>
+        <div class="price-unit">/ ${p.unit}</div>
+        ${disc ? `<div class="price-save">🎉 ${fmt(p.oldPrice - price)} tasarruf!</div>` : ''}
+      </div>
+
+      <!-- QTY & ADD -->
+      <div class="add-row">
+        <div class="qty-ctrl lg">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span class="qty-val" id="qty-display">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+        <button class="add-btn-main" id="main-add-btn" onclick="addToCart(${p.id})">
+          🛒 Sepete Ekle
+        </button>
+        <button class="buy-now-btn" onclick="buyNow(${p.id})">
+          ⚡ Hemen Al
+        </button>
+      </div>
+
+      <!-- FAV & SHARE -->
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <button class="btn btn-ghost btn-sm" onclick="toggleFav(${p.id})">
+          ${isFav ? '❤️ Favorilerimde' : '🤍 Favorilere Ekle'}
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="shareProduct()">📤 Paylaş</button>
+      </div>
+
+      <!-- DELIVERY OPTIONS -->
+      <div style="font-size:13px;font-weight:900;color:var(--blk);margin-bottom:10px">🚚 Teslimat Seçenekleri</div>
+      <div class="delivery-box">
+        <label class="delivery-opt">
+          <input type="radio" name="delivery" value="standard" checked>
+          <div class="delivery-opt-content">
+            <div class="delivery-opt-title">Standart Teslimat</div>
+            <div class="delivery-opt-sub">Bugün sipariş ver, yarın kapında</div>
+          </div>
+          <div class="delivery-opt-price">₺29,90</div>
+        </label>
+        <label class="delivery-opt">
+          <input type="radio" name="delivery" value="express">
+          <div class="delivery-opt-content">
+            <div class="delivery-opt-title">Ekspres Teslimat</div>
+            <div class="delivery-opt-sub">2-4 saat içinde teslimat</div>
+          </div>
+          <div class="delivery-opt-price">₺49,90</div>
+        </label>
+        <label class="delivery-opt">
+          <input type="radio" name="delivery" value="free">
+          <div class="delivery-opt-content">
+            <div class="delivery-opt-title">Ücretsiz Teslimat</div>
+            <div class="delivery-opt-sub">₺300 ve üzeri siparişlerde</div>
+          </div>
+          <div class="delivery-opt-price free">Ücretsiz</div>
+        </label>
+      </div>
+
+      <!-- TRUST BADGES -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${['✅ Orijinal Ürün', '🔒 Güvenli Alışveriş', '↩️ Kolay İade', '📞 7/24 Destek'].map(b =>
+          `<span style="font-size:12px;font-weight:700;color:#555;background:var(--gray5);padding:5px 10px;border-radius:6px">${b}</span>`
+        ).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderTabs(p) {
+  // Description
+  document.getElementById('tab-desc').innerHTML = `
+    <p class="desc-text">${p.desc}</p>
+    ${p.features ? `<div class="section-title" style="font-size:15px;margin-bottom:12px">Özellikler</div>
+    <div class="feature-list">${p.features.map(f => `<div class="feature-item">${f}</div>`).join('')}</div>` : ''}
+  `;
+
+  // Nutrition
+  document.getElementById('tab-nutrition').innerHTML = p.nutrition ? `
+    <table class="nutrition-table">
+      <tr><th>Besin Değeri</th><th>100g / 100ml başına</th></tr>
+      ${Object.entries(p.nutrition).map(([k,v]) => `<tr><td>${k.charAt(0).toUpperCase()+k.slice(1)}</td><td><strong>${v}</strong></td></tr>`).join('')}
+    </table>
+    <p style="font-size:12px;color:#aaa;margin-top:12px;font-weight:600">* Günlük tavsiye edilen değerin yüzdesi 2000 kalorilik bir diyete göre hesaplanmıştır.</p>
+  ` : '<p style="color:#aaa;font-weight:600;padding:16px 0">Bu ürün için besin değeri bilgisi mevcut değil.</p>';
+
+  // Reviews
+  const reviews = [
+    { user: 'Ayşe K.', rating: 5, text: 'Çok kaliteli ürün, hızlı kargo. Kesinlikle tavsiye ederim!', date: '15.03.2026' },
+    { user: 'Mehmet Y.', rating: 4, text: 'Fiyat performans açısından gayet iyi. Tekrar alacağım.', date: '10.03.2026' },
+    { user: 'Fatma Ö.', rating: 5, text: 'Taze geldi, beklentilerimi karşıladı. Teşekkürler Gül Asya!', date: '05.03.2026' },
+  ];
+  document.getElementById('tab-reviews').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--gray4);margin-bottom:16px">
+      <div style="text-align:center">
+        <div style="font-size:48px;font-weight:900;color:var(--blk)">4.8</div>
+        <div class="stars">${'★★★★★'.split('').map(s => `<span class="star filled">${s}</span>`).join('')}</div>
+        <div style="font-size:12px;color:#aaa;font-weight:700;margin-top:3px">47 yorum</div>
+      </div>
+      <div style="flex:1">
+        ${[5,4,3,2,1].map(n => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:700;color:#888;min-width:10px">${n}</span>
+          <div style="flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${n===5?78:n===4?14:n===3?6:2}%;background:${n>=4?'#f59e0b':'#ccc'};border-radius:3px"></div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+    ${reviews.map(r => `
+    <div class="review-card">
+      <div class="review-header">
+        <span class="review-user">${r.user}</span>
+        <span class="review-date">${r.date}</span>
+      </div>
+      <div class="stars" style="margin-bottom:6px">${'★★★★★'.split('').map((s,i)=>`<span class="star ${i<r.rating?'filled':''}">${s}</span>`).join('')}</div>
+      <div class="review-text">${r.text}</div>
+    </div>`).join('')}
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="toast('📝','Yorum yazmak için giriş yapın','i')">+ Yorum Yaz</button>
+  `;
+
+  // Delivery info tab
+  document.getElementById('tab-delivery-info').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+      ${[
+        { icon: '🚚', title: 'Standart Teslimat', text: 'Hafta içi 09:00–21:00 arası sipariş verilen ürünler aynı gün veya ertesi iş günü teslim edilir.', price: '₺29,90' },
+        { icon: '⚡', title: 'Ekspres Teslimat', text: '2-4 saat içinde kapınıza teslim. Belirli bölgelerde geçerlidir.', price: '₺49,90' },
+        { icon: '🎁', title: 'Ücretsiz Kargo', text: '₺300 ve üzeri siparişlerinizde kargo tamamen ücretsizdir.', price: 'Ücretsiz' },
+        { icon: '↩️', title: 'İade Politikası', text: 'Taze olmayan veya hasarlı ürünleri teslim anında iade edebilirsiniz.', price: '' },
+      ].map(d => `
+      <div style="background:var(--gray5);border-radius:var(--rad-sm);padding:16px">
+        <div style="font-size:24px;margin-bottom:8px">${d.icon}</div>
+        <div style="font-size:14px;font-weight:900;margin-bottom:5px">${d.title} ${d.price ? `<span style="color:var(--green)">(${d.price})</span>` : ''}</div>
+        <div style="font-size:13px;color:#888;font-weight:600;line-height:1.6">${d.text}</div>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+function renderRelated(p) {
+  const related = PRODUCTS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 5);
+  const grid = document.getElementById('related-grid');
+  if (!grid || !related.length) return;
+  grid.innerHTML = related.map(r => {
+    const disc = r.oldPrice ? Math.round((1 - r.price / r.oldPrice) * 100) : null;
+    return `
+    <div class="pcard" onclick="goProduct(${r.id})">
+      <div class="pcard-img">
+        <img src="${r.img}" alt="${r.name}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🛒</text></svg>'">
+        ${disc ? `<div class="pcard-badges"><div class="pb pb-r">%${disc}</div></div>` : ''}
+      </div>
+      <div class="pcard-body">
+        <div class="pbrand">${r.brand}</div>
+        <div class="pname">${r.name}</div>
+        <div class="pprice-row" style="margin-top:8px">
+          <div>
+            ${r.oldPrice ? `<div class="pprice-old">${fmt(r.oldPrice)}</div>` : ''}
+            <div class="pprice-new" style="font-size:18px">${fmt(r.price)}</div>
+          </div>
+        </div>
+        <button class="padd" onclick="handleAddRelated(event,${r.id})">Sepete Ekle</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────
+function changeQty(delta) {
+  const p = PRODUCTS.find(x => x.id === productId);
+  qty = Math.max(p.minOrder, Math.min(p.maxOrder, qty + delta));
+  document.getElementById('qty-display').textContent = qty;
+}
+
+function addToCart(id) {
+  if (!Store.getUser()) { openAuthModal(); toast('⚠️', 'Sepete eklemek için giriş yapın', 'e'); return; }
+  Store.addToCart(id, qty);
+  const btn = document.getElementById('main-add-btn');
+  if (btn) { btn.textContent = `✓ ${qty} adet eklendi`; btn.classList.add('added'); setTimeout(() => { btn.textContent = '🛒 Sepete Ekle'; btn.classList.remove('added'); }, 2000); }
+  const p = PRODUCTS.find(x => x.id === id);
+  toast('🛒', `${qty} × ${p.name} sepete eklendi`, 's');
+  renderHeader();
+}
+
+function handleAddRelated(e, id) {
+  e.stopPropagation();
+  if (!Store.getUser()) { openAuthModal(); return; }
+  Store.addToCart(id, 1);
+  const p = PRODUCTS.find(x => x.id === id);
+  toast('🛒', `${p.name} eklendi`, 's');
+  renderHeader();
+}
+
+function buyNow(id) {
+  if (!Store.getUser()) { openAuthModal(); return; }
+  Store.addToCart(id, qty);
+  renderHeader();
+  window.location.href = 'cart.html?checkout=1';
+}
+
+function toggleFav(id) {
+  if (!Store.getUser()) { openAuthModal(); toast('ℹ️', 'Favori eklemek için giriş yapın', 'i'); return; }
+  const isNow = Store.toggleFav(id);
+  const el = document.getElementById('prod-fav');
+  if (el) { el.textContent = isNow ? '❤️' : '🤍'; el.classList.toggle('active', isNow); }
+  toast(isNow ? '❤️' : '🤍', isNow ? 'Favorilere eklendi' : 'Favorilerden çıkarıldı', isNow ? 's' : 'i');
+  renderHeader();
+}
+
+function shareProduct() {
+  const p = PRODUCTS.find(x => x.id === productId);
+  if (navigator.share) {
+    navigator.share({ title: p.name, text: `Gül Asya'da ${p.name} — ${fmt(p.price)}`, url: window.location.href });
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    toast('📋', 'Bağlantı kopyalandı', 'i');
+  }
+}
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.prod-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
