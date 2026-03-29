@@ -141,6 +141,7 @@
 </script>
 
 <script src="products.js"></script>
+<script>function _getProds(){return(typeof AdminProducts!=="undefined")?AdminProducts.getAll():PRODUCTS;}</script>
 
 <!-- Firebase Tarayıcı Kütüphaneleri -->
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -205,7 +206,7 @@ function renderCart() {
       <button class="btn btn-ghost btn-sm" onclick="clearCartConfirm()">🗑️ Sepeti Boşalt</button>
     </div>
     ${cart.map(item => {
-      const p = PRODUCTS.find(x => x.id === item.id);
+      const p = _getProds().find(x => x.id === item.id);
       if (!p) return '';
       const price = prices[p.id] || p.price;
       return `
@@ -264,7 +265,7 @@ function updateQty(id, delta) {
   const cart = Store.getCart();
   const item = cart.find(i => i.id === id);
   if (!item) return;
-  const p = PRODUCTS.find(x => x.id === id);
+  const p = _getProds().find(x => x.id === id);
   item.qty = Math.max(p?.minOrder || 1, Math.min(99, item.qty + delta));
   Store.setCart(cart);
   renderCart(); renderHeader();
@@ -272,7 +273,7 @@ function updateQty(id, delta) {
 
 function removeItem(id) {
   Store.removeFromCart(id);
-  const p = PRODUCTS.find(x => x.id === id);
+  const p = _getProds().find(x => x.id === id);
   toast('🗑️', `${p?.name} sepetten çıkarıldı`, 'i');
   renderCart(); renderHeader();
 }
@@ -346,7 +347,7 @@ function renderCheckoutStep() {
         <div class="checkout-card-title">🧾 Sipariş Özeti</div>
         <div class="order-items-preview">
           ${Store.getCart().map(item => {
-            const p = PRODUCTS.find(x => x.id === item.id);
+            const p = _getProds().find(x => x.id === item.id);
             if (!p) return '';
             const pr = prices[p.id] || p.price;
             return `<div class="oi-row"><span>${p.name} ×${item.qty}</span><span>${fmt(pr*item.qty)}</span></div>`;
@@ -464,7 +465,7 @@ function placeOrder(paytype) {
     deliveryType: pendingAddr.delivery,
     paytype,
     cardLast4: pendingPayment.cardLast4,
-    items: Store.getCart().map(i => ({ id: i.id, qty: i.qty, price: (Store.getPrices()||{})[i.id] || PRODUCTS.find(x=>x.id===i.id)?.price || 0 })),
+    items: Store.getCart().map(i => ({ id: i.id, qty: i.qty, price: (Store.getPrices()||{})[i.id] || _getProds().find(x=>x.id===i.id)?.price || 0 })),
     total: grand,
     status: 'Yeni',
   };
