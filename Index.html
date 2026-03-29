@@ -421,6 +421,14 @@ function handleFav(e, id) {
 function handleAdd(e, id) {
   e.stopPropagation();
   if (!Store.getUser()) { openAuthModal(); toast('⚠️', 'Sepete eklemek için giriş yapın', 'e'); return; }
+
+  // Rate limit — 60 saniyede max 20 ekleme
+  const rl = RateLimit.check(RL.ADD_TO_CART.key, RL.ADD_TO_CART.max, RL.ADD_TO_CART.windowMs);
+  if (!rl.allowed) {
+    toast('🚫', 'Çok hızlı ekliyorsunuz! ' + rl.retryAfterMin + ' bekleyin.', 'e');
+    return;
+  }
+
   Store.addToCart(id, 1);
   const btn = document.getElementById('add-' + id);
   if (btn) { btn.textContent = '✓ Eklendi'; btn.classList.add('added'); setTimeout(() => { btn.textContent = '🛒 Sepete Ekle'; btn.classList.remove('added'); }, 1800); }
