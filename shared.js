@@ -180,55 +180,65 @@ function switchAuthTab(tab) {
   if (tr) tr.style.cssText += tab === 'register' ? ';background:#111;color:#fff' : ';background:#fff;color:#888';
 }
 
+function doRegister() {
+  const email = document.getElementById('r-email').value.trim().toLowerCase();
+  const pass = document.getElementById('r-pass').value;
+  const name = document.getElementById('r-name').value.trim();
+  const err = document.getElementById('r-err');
+
+  if (!email || !pass || !name) { err.textContent = 'Lütfen tüm alanları doldurun.'; return; }
+
+  // Firebase'e yeni kullanıcı kaydet
+  firebase.auth().createUserWithEmailAndPassword(email, pass)
+    .then((userCredential) => {
+      // Başarılı olursa kullanıcının ekstra bilgilerini (ad, rol) veritabanına kaydet
+      db.collection("users").doc(userCredential.user.uid).set({
+        name: name,
+        email: email,
+        role: "customer",
+        createdAt: new Date().toLocaleString('tr-TR')
+      });
+      toast('🎉', 'Kayıt başarılı! Hoş geldiniz.', 's');
+      closeModal('auth-modal');
+    })
+    .catch((error) => {
+      err.textContent = "Kayıt olunamadı. (Şifre en az 6 karakter olmalı veya e-posta kullanılıyor olabilir)";
+      console.error(error);
+    });
+}
+
 function doLogin() {
-  const email = (document.getElementById('l-email')?.value || '').trim().toLowerCase();
-  const pass = document.getElementById('l-pass')?.value || '';
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const pass = document.getElementById('l-pass').value;
   const err = document.getElementById('l-err');
-  if (!email || !pass) { err.textContent = 'Tüm alanlar zorunludur.'; return; }
+
+  if (!email || !pass) { err.textContent = 'Lütfen e-posta ve şifrenizi girin.'; return; }
+
+  // Admin girişi için kısa yol (Veritabanında admin yetkisi ayarlayana kadar)
   if (email === 'admin@gulasya.com' && pass === 'admin123') {
     closeModal('auth-modal'); window.location.href = 'admin.html'; return;
   }
-  const user = Store.getUsers().find(u => u.email === email && u.password === pass);
-  if (!user) { err.textContent = 'E-posta veya şifre hatalı.'; return; }
-  err.textContent = '';
-  Store.setUser(user);
-  toast('👋', `Hoş geldin, ${user.name}!`, 's');
-  closeModal('auth-modal');
-  renderHeader();
-}
 
-function doRegister() {
-  const name = (document.getElementById('r-name')?.value || '').trim();
-  const surname = (document.getElementById('r-surname')?.value || '').trim();
-  const email = (document.getElementById('r-email')?.value || '').trim().toLowerCase();
-  const phone = (document.getElementById('r-phone')?.value || '').trim();
-  const addr = (document.getElementById('r-addr')?.value || '').trim();
-  const pass = document.getElementById('r-pass')?.value || '';
-  const pass2 = document.getElementById('r-pass2')?.value || '';
-  const privacy = document.getElementById('r-privacy')?.checked;
-  const err = document.getElementById('r-err');
-  if (!name || !surname || !email || !phone || !pass) { err.textContent = 'Tüm alanlar zorunludur.'; return; }
-  if (!privacy) { err.textContent = 'Gizlilik politikasını kabul etmelisiniz.'; return; }
-  if (pass.length < 6) { err.textContent = 'Şifre en az 6 karakter olmalıdır.'; return; }
-  if (pass !== pass2) { err.textContent = 'Şifreler eşleşmiyor.'; return; }
-  const users = Store.getUsers();
-  if (users.find(u => u.email === email)) { err.textContent = 'Bu e-posta zaten kayıtlı.'; return; }
-  const user = { id: Date.now(), name, surname, email, phone, address: addr, password: pass, createdAt: new Date().toLocaleString('tr-TR') };
-  users.push(user); Store.setUsers(users);
-  Store.setUser(user);
-  Store.sendSMS(phone, `Gül Asya Mini Market: Merhaba ${name}! Üyeliğiniz oluşturuldu. İyi alışverişler! 🌹`);
-  err.textContent = '';
-  toast('🎉', 'Kayıt başarılı! Hoş geldiniz.', 's');
-  closeModal('auth-modal');
-  renderHeader();
+  // Firebase ile giriş yap
+  firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then(() => {
+      toast('👋', 'Hoş geldin!', 's');
+      closeModal('auth-modal');
+    })
+    .catch((error) => {
+      err.textContent = "E-posta veya şifre hatalı.";
+    });
 }
 
 function doLogout() {
-  Store.setUser(null);
-  toast('👋', 'Çıkış yapıldı.', 'i');
-  renderHeader();
-  window.location.href = 'index.html';
+  firebase.auth().signOut().then(() => {
+    Store.setUser(null);
+    toast('👋', 'Çıkış yapıldı.', 'i');
+    renderHeader();
+    window.location.href = 'index.html';
+  });
 }
+
 
 function openProfileModal() {
   const u = Store.getUser();
@@ -326,4 +336,17 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ── ADMIN ERİŞİM KISAYOLU ─────────────────────────────── */
 document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.shiftKey && e.key === 'A') goAdmin();
+});
+
+// SAYFA YENİLENDİĞİNDE KULLANICIYI HATIRLAMA (Bu kodu shared.js'in en altına ekle)
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    // Giriş yapmış birisi varsa bilgilerini al ve header'ı güncelle
+    Store.setUser({ email: user.email, uid: user.uid, name: user.email.split('@')[0] });
+    renderHeader();
+  } else {
+    // Çıkış yapılmışsa bilgileri temizle
+    Store.setUser(null);
+    renderHeader();
+  }
 });
