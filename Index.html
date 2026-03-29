@@ -295,7 +295,8 @@ function renderSidebar() {
   const menu = document.getElementById('sidebar-menu');
   if (!menu) return;
   menu.innerHTML = cats.map(c => {
-    const count = c.id ? PRODUCTS.filter(p => p.cat === c.id).length : PRODUCTS.length;
+    const allProds = (typeof AdminProducts !== 'undefined') ? AdminProducts.getAll() : PRODUCTS;
+    const count = c.id ? allProds.filter(p => p.cat === c.id).length : allProds.length;
     return `<div class="sitem${currentCat === c.id ? ' active' : ''}" onclick="filterAndScroll('${c.id}','')">
       <span class="sitem-icon">${c.icon}</span>${c.label}
       <span class="sitem-count">${count}</span>
@@ -310,7 +311,7 @@ function renderProducts() {
   const cfBtn = document.getElementById('clear-filter-btn');
   if (!grid) return;
 
-  let list = [...PRODUCTS];
+  let list = (typeof AdminProducts !== 'undefined') ? [...AdminProducts.getAll()] : [...PRODUCTS];
   if (currentCat) list = list.filter(p => p.cat === currentCat);
   if (currentSearch) {
     const q = currentSearch.toLowerCase();
@@ -423,7 +424,8 @@ function handleAdd(e, id) {
   Store.addToCart(id, 1);
   const btn = document.getElementById('add-' + id);
   if (btn) { btn.textContent = '✓ Eklendi'; btn.classList.add('added'); setTimeout(() => { btn.textContent = '🛒 Sepete Ekle'; btn.classList.remove('added'); }, 1800); }
-  const p = PRODUCTS.find(x => x.id === id);
+  const allProds = (typeof AdminProducts !== 'undefined') ? AdminProducts.getAll() : PRODUCTS;
+  const p = allProds.find(x => x.id === id);
   toast('🛒', `${p.name} sepete eklendi`, 's');
   renderHeader();
 }
